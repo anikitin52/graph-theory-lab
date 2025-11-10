@@ -9,6 +9,7 @@ def run_all_tests():
 
     suite.addTest(loader.loadTestsFromTestCase(TestGraph))
     suite.addTest(loader.loadTestsFromTestCase(TestGraphIO))
+    suite.addTest(loader.loadTestsFromTestCase(TestPerformance))
 
     runner = unittest.TextTestRunner(verbosity=2)
     result = runner.run(suite)

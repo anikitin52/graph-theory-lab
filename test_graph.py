@@ -1,4 +1,6 @@
 import unittest
+import time
+import matplotlib.pyplot as plt
 from graph import Graph
 from graph_io import *
 
@@ -365,3 +367,51 @@ class TestGraphIO(unittest.TestCase):
     def test_count_edges_from_matrix_with_loops_directed(self):
         matrix = [[1, 1, 0], [1, 0, 1], [0, 1, 1]]
         self.assertEqual(count_edges_from_matrix(matrix, True), 6)
+
+
+import time
+import matplotlib.pyplot as plt
+
+
+class TestPerformance(unittest.TestCase):
+
+    def test_eulerian_cycle_performance(self):
+        """Тест производительности алгоритма поиска Эйлерова цикла"""
+        print("\n--- Тестирование производительности ---")
+
+        sizes = [100, 200, 500, 1000, 2000, 5000, 10000, 15000, 20000]
+        times = []
+
+        for size in sizes:
+            graph = Graph(size)
+            graph.directed = False
+
+            # Создаем циклический граф
+            for i in range(size):
+                prev_vertex = (i - 1) % size
+                next_vertex = (i + 1) % size
+                graph.adj_lists[i] = [prev_vertex, next_vertex]
+
+            graph.num_edges = size
+
+            start_time = time.time()
+            cycle = graph.find_eulerian_cycle()
+            end_time = time.time()
+
+            execution_time = (end_time - start_time) * 1000
+            times.append(execution_time)
+
+            print(f"Граф с {size} вершинами: {execution_time:.2f} мс")
+
+            self.assertIsNotNone(cycle)
+            self.assertEqual(cycle[0], cycle[-1])
+
+        # Строим график
+        plt.figure(figsize=(10, 6))
+        plt.plot(sizes, times, 'bo-', linewidth=2, markersize=8)
+        plt.xlabel('Количество вершин')
+        plt.ylabel('Время выполнения (мс)')
+        plt.title('Зависимость времени поиска Эйлерова цикла от размера графа')
+        plt.grid(True, alpha=0.3)
+        plt.savefig('performance_graph.png', dpi=300, bbox_inches='tight')
+        plt.close()

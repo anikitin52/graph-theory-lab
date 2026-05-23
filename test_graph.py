@@ -250,7 +250,7 @@ class TestGraph(unittest.TestCase):
         graph.directed = False
         graph.num_edges = 3  # Ребра: (0,0), (0,1), (1,1)
 
-        self.assertFalse(graph._is_eulerian())  # ✅ Должен быть False
+        self.assertFalse(graph._is_eulerian())
 
     def test_directed_cycle_eulerian(self):
         graph = Graph(3)
@@ -291,7 +291,7 @@ class TestGraph(unittest.TestCase):
         }
         graph.directed = False
         graph.num_edges = 10  # n*(n-1)/2 = 5*4/2 = 10
-        self.assertTrue(graph._is_eulerian())  # ✅ Должен быть True
+        self.assertTrue(graph._is_eulerian())
 
     def test_complete_graph_large_eulerian_even(self):
         graph = Graph(4)
@@ -305,6 +305,466 @@ class TestGraph(unittest.TestCase):
         graph.num_edges = 6  # 4*3/2 = 6
         self.assertFalse(graph._is_eulerian())
 
+    def test_is_tournament_true(self):
+        """Турнир из трёх вершин (цикл)"""
+        graph = Graph(3)
+        graph.directed = True
+        graph.adj_matrix = [
+            [0, 1, 0],
+            [0, 0, 1],
+            [1, 0, 0]
+        ]
+        graph._adj_matrix_to_adj_lists()
+        self.assertTrue(graph.is_tournament())
+
+    def test_is_tournament_directed_not_tournament(self):
+        """Ориентированный граф, но не турнир: есть два встречных ребра и изолированная вершина"""
+        graph = Graph(3)
+        graph.directed = True
+        graph.adj_matrix = [
+            [0, 1, 0],
+            [1, 0, 0],
+            [0, 0, 0]
+        ]
+        graph._adj_matrix_to_adj_lists()
+        self.assertFalse(graph.is_tournament())
+
+    def test_is_tournament_undirected(self):
+        """Неориентированный граф не может быть турниром"""
+        graph = Graph(3)
+        graph.directed = False
+        graph.adj_matrix = [
+            [0, 1, 1],
+            [1, 0, 1],
+            [1, 1, 0]
+        ]
+        graph._adj_matrix_to_adj_lists()
+        self.assertFalse(graph.is_tournament())
+
+    def test_is_tournament_K33_oriented(self):
+        """Ориентированный K_{3,3} (все рёбра из доли 0..2 в 3..5) — не турнир"""
+        n = 6
+        graph = Graph(n)
+        graph.directed = True
+        matrix = [[0] * n for _ in range(n)]
+        for i in range(3):
+            for j in range(3, 6):
+                matrix[i][j] = 1
+        graph.adj_matrix = matrix
+        graph._adj_matrix_to_adj_lists()
+        self.assertFalse(graph.is_tournament())
+
+    def test_is_tournament_K5_tournament(self):
+        """K5, ориентированный как турнир (i -> j при i < j)"""
+        n = 5
+        graph = Graph(n)
+        graph.directed = True
+        matrix = [[0] * n for _ in range(n)]
+        for i in range(n):
+            for j in range(n):
+                if i < j:
+                    matrix[i][j] = 1
+        graph.adj_matrix = matrix
+        graph._adj_matrix_to_adj_lists()
+        self.assertTrue(graph.is_tournament())
+
+    def test_is_tournament_large_tournament_100(self):
+        """Большой турнир на 100 вершинах (i -> j при i < j)"""
+        n = 100
+        graph = Graph(n)
+        graph.directed = True
+        matrix = [[0] * n for _ in range(n)]
+        for i in range(n):
+            for j in range(n):
+                if i < j:
+                    matrix[i][j] = 1
+        graph.adj_matrix = matrix
+        graph._adj_matrix_to_adj_lists()
+        self.assertTrue(graph.is_tournament())
+
+    def test_hamiltonian_cycle_exists(self):
+        """Граф C4 (цикл из 4 вершин) — гамильтонов цикл существует"""
+        graph = Graph(4)
+        graph.directed = False
+        graph.adj_lists = {
+            0: [1, 3],
+            1: [0, 2],
+            2: [1, 3],
+            3: [0, 2]
+        }
+        cycle = graph.find_hamiltonian_cycle()
+        self.assertIsNotNone(cycle)
+        self.assertEqual(len(cycle), 5)
+        self.assertEqual(cycle[0], cycle[-1])
+        self.assertEqual(sorted(cycle[:-1]), [0, 1, 2, 3])
+
+    def test_hamiltonian_cycle_path_no_cycle(self):
+        """Путь P4 (0-1-2-3) — гамильтонов путь есть, цикла нет"""
+        graph = Graph(4)
+        graph.directed = False
+        graph.adj_lists = {
+            0: [1],
+            1: [0, 2],
+            2: [1, 3],
+            3: [2]
+        }
+        cycle = graph.find_hamiltonian_cycle()
+        self.assertIsNone(cycle)
+
+    def test_hamiltonian_cycle_no_path_no_cycle(self):
+        """Две компоненты (0-1 и 2-3) — ни пути, ни цикла"""
+        graph = Graph(4)
+        graph.directed = False
+        graph.adj_lists = {
+            0: [1],
+            1: [0],
+            2: [3],
+            3: [2]
+        }
+        cycle = graph.find_hamiltonian_cycle()
+        self.assertIsNone(cycle)
+
+    def test_hamiltonian_cycle_bipartite(self):
+        """Двудольный граф K_{2,3} — цикла нет (доли разного размера)"""
+        graph = Graph(5)
+        graph.directed = False
+        # доли: {0,1} и {2,3,4}, все рёбра между долями
+        graph.adj_lists = {
+            0: [2, 3, 4],
+            1: [2, 3, 4],
+            2: [0, 1],
+            3: [0, 1],
+            4: [0, 1]
+        }
+        cycle = graph.find_hamiltonian_cycle()
+        self.assertIsNone(cycle)
+
+    def test_hamiltonian_cycle_split_graph(self):
+        """Расщепляемый граф без гамильтонова цикла"""
+        graph = Graph(4)
+        graph.directed = False
+        # Клика {0,1}, независимое множество {2,3}; 0 соединена с 2 и 3, 1 соединена только с 2
+        graph.adj_lists = {
+            0: [1, 2, 3],
+            1: [0, 2],
+            2: [0, 1],
+            3: [0]
+        }
+        cycle = graph.find_hamiltonian_cycle()
+        self.assertIsNone(cycle)
+
+    def test_hamiltonian_cycle_co_bipartite(self):
+        """Дополнение двудольного графа — две несвязные клики, цикла нет"""
+        graph = Graph(4)
+        graph.directed = False
+        # Клика {0,1}, клика {2,3}, рёбер между ними нет
+        graph.adj_lists = {
+            0: [1],
+            1: [0],
+            2: [3],
+            3: [2]
+        }
+        cycle = graph.find_hamiltonian_cycle()
+        self.assertIsNone(cycle)
+
+    def test_hamiltonian_cycle_chordal(self):
+        """Хордальный граф (P4) — нет цикла"""
+        graph = Graph(4)
+        graph.directed = False
+        graph.adj_lists = {
+            0: [1],
+            1: [0, 2],
+            2: [1, 3],
+            3: [2]
+        }
+        cycle = graph.find_hamiltonian_cycle()
+        self.assertIsNone(cycle)
+
+    def test_hamiltonian_cycle_directed(self):
+        """Ориентированный цикл 0->1->2->0 — гамильтонов цикл существует"""
+        graph = Graph(3)
+        graph.directed = True
+        graph.adj_lists = {
+            0: [1],
+            1: [2],
+            2: [0]
+        }
+        cycle = graph.find_hamiltonian_cycle()
+        self.assertIsNotNone(cycle)
+        self.assertEqual(len(cycle), 4)
+        self.assertEqual(cycle[0], cycle[-1])
+
+    def test_hamiltonian_cycle_multiple_edges(self):
+        """Граф с кратными рёбрами (K3 с дубликатами) — цикл должен найтись"""
+        graph = Graph(3)
+        graph.directed = False
+        graph.adj_lists = {
+            0: [1, 1, 2],
+            1: [0, 0, 2],
+            2: [0, 1]
+        }
+        cycle = graph.find_hamiltonian_cycle()
+        self.assertIsNotNone(cycle)
+        self.assertEqual(len(cycle), 4)
+        self.assertEqual(cycle[0], cycle[-1])
+
+    def test_hamiltonian_cycle_with_loop(self):
+        """Граф с петлёй (K3 с петлёй у вершины 0) — цикл сохраняется"""
+        graph = Graph(3)
+        graph.directed = False
+        graph.adj_lists = {
+            0: [0, 1, 2],
+            1: [0, 2],
+            2: [0, 1]
+        }
+        cycle = graph.find_hamiltonian_cycle()
+        self.assertIsNotNone(cycle)
+        self.assertEqual(len(cycle), 4)
+        self.assertEqual(cycle[0], cycle[-1])
+
+    def test_hamiltonian_path_graph_with_cycle(self):
+        """Граф C4 (цикл) — гамильтонов путь существует"""
+        graph = Graph(4)
+        graph.directed = False
+        graph.adj_lists = {
+            0: [1, 3],
+            1: [0, 2],
+            2: [1, 3],
+            3: [0, 2]
+        }
+        path = graph.find_hamiltonian_path()
+        self.assertIsNotNone(path)
+        self.assertEqual(len(path), 4)
+        self.assertEqual(sorted(path), [0, 1, 2, 3])
+
+    def test_hamiltonian_path_path_no_cycle(self):
+        """Путь P4 (0-1-2-3) — гамильтонов путь есть"""
+        graph = Graph(4)
+        graph.directed = False
+        graph.adj_lists = {
+            0: [1],
+            1: [0, 2],
+            2: [1, 3],
+            3: [2]
+        }
+        path = graph.find_hamiltonian_path()
+        self.assertIsNotNone(path)
+        self.assertEqual(len(path), 4)
+        self.assertTrue(set(path) == {0, 1, 2, 3})
+
+    def test_hamiltonian_path_no_path_no_cycle(self):
+        """Две компоненты (0-1 и 2-3) — ни пути, ни цикла"""
+        graph = Graph(4)
+        graph.directed = False
+        graph.adj_lists = {
+            0: [1],
+            1: [0],
+            2: [3],
+            3: [2]
+        }
+        path = graph.find_hamiltonian_path()
+        self.assertIsNone(path)
+
+    def test_hamiltonian_path_split_graph(self):
+        """Расщепляемый граф (клика {0,1}, независимое {2,3}, рёбра 0-2,0-3,1-2) — путь есть"""
+        graph = Graph(4)
+        graph.directed = False
+        graph.adj_lists = {
+            0: [1, 2, 3],
+            1: [0, 2],
+            2: [0, 1],
+            3: [0]
+        }
+        path = graph.find_hamiltonian_path()
+        self.assertIsNotNone(path)
+        self.assertEqual(len(path), 4)
+        self.assertEqual(set(path), {0, 1, 2, 3})
+
+    def test_hamiltonian_path_co_bipartite(self):
+        """Дополнение двудольного графа — две несвязные клики, пути нет"""
+        graph = Graph(4)
+        graph.directed = False
+        graph.adj_lists = {
+            0: [1],
+            1: [0],
+            2: [3],
+            3: [2]
+        }
+        path = graph.find_hamiltonian_path()
+        self.assertIsNone(path)
+
+    def test_hamiltonian_path_chordal(self):
+        """Хордальный граф P4 — путь есть"""
+        graph = Graph(4)
+        graph.directed = False
+        graph.adj_lists = {
+            0: [1],
+            1: [0, 2],
+            2: [1, 3],
+            3: [2]
+        }
+        path = graph.find_hamiltonian_path()
+        self.assertIsNotNone(path)
+        self.assertEqual(len(path), 4)
+
+    def test_hamiltonian_path_directed(self):
+        """Ориентированный путь 0->1->2 — гамильтонов путь существует"""
+        graph = Graph(3)
+        graph.directed = True
+        graph.adj_lists = {
+            0: [1],
+            1: [2],
+            2: []
+        }
+        path = graph.find_hamiltonian_path()
+        self.assertIsNotNone(path)
+        self.assertEqual(len(path), 3)
+        self.assertEqual(set(path), {0, 1, 2})
+
+    def test_hamiltonian_path_multiple_edges(self):
+        """Граф с кратными рёбрами (K3 с дубликатами) — путь есть"""
+        graph = Graph(3)
+        graph.directed = False
+        graph.adj_lists = {
+            0: [1, 1, 2],
+            1: [0, 0, 2],
+            2: [0, 1]
+        }
+        path = graph.find_hamiltonian_path()
+        self.assertIsNotNone(path)
+        self.assertEqual(len(path), 3)
+        self.assertEqual(set(path), {0, 1, 2})
+
+    def test_hamiltonian_path_with_loop(self):
+        """Граф с петлёй (K3 с петлёй у вершины 0) — путь существует"""
+        graph = Graph(3)
+        graph.directed = False
+        graph.adj_lists = {
+            0: [0, 1, 2],
+            1: [0, 2],
+            2: [0, 1]
+        }
+        path = graph.find_hamiltonian_path()
+        self.assertIsNotNone(path)
+        self.assertEqual(len(path), 3)
+        self.assertEqual(set(path), {0, 1, 2})
+
+    def test_hamiltonian_cycle_tournament_small_3(self):
+        """Турнир на 3 вершинах (цикл 0->1->2->0) — цикл существует"""
+        graph = Graph(3)
+        graph.directed = True
+        graph.adj_lists = {
+            0: [1],
+            1: [2],
+            2: [0]
+        }
+        graph._adj_lists_to_adj_matrix()
+        cycle = graph.find_hamiltonian_cycle_tournament()
+        self.assertIsNotNone(cycle)
+        self.assertEqual(len(cycle), 4)                     # n+1
+        self.assertEqual(cycle[0], cycle[-1])
+        self.assertEqual(sorted(cycle[:-1]), [0, 1, 2])
+
+    def test_hamiltonian_cycle_tournament_strongly_connected_4(self):
+        """Сильно связный турнир на 4 вершинах (содержит цикл)"""
+        graph = Graph(4)
+        graph.directed = True
+        # Базовый цикл 0->1->2->3->0, остальные рёбра добавлены до турнира:
+        # 0->2, 1->3
+        graph.adj_lists = {
+            0: [1, 2],
+            1: [2, 3],
+            2: [3],
+            3: [0]
+        }
+        graph._adj_lists_to_adj_matrix()
+        cycle = graph.find_hamiltonian_cycle_tournament()
+        self.assertIsNotNone(cycle)
+        self.assertEqual(len(cycle), 5)
+        self.assertEqual(cycle[0], cycle[-1])
+        self.assertEqual(set(cycle[:-1]), {0, 1, 2, 3})
+
+    def test_hamiltonian_cycle_tournament_not_strongly_connected_4(self):
+        """Турнир с источником (0) — не сильно связный, цикла нет"""
+        graph = Graph(4)
+        graph.directed = True
+        # Транзитивный турнир: все рёбра от меньшего к большему
+        graph.adj_lists = {
+            0: [1, 2, 3],
+            1: [2, 3],
+            2: [3],
+            3: []
+        }
+        graph._adj_lists_to_adj_matrix()
+        cycle = graph.find_hamiltonian_cycle_tournament()
+        self.assertIsNone(cycle)
+
+    def test_hamiltonian_cycle_tournament_strongly_connected_5(self):
+        """Сильно связный турнир на 5 вершинах (содержит цикл)"""
+        graph = Graph(5)
+        graph.directed = True
+        # Цикл 0->1->2->3->4->0, доп. рёбра: 0->2, 3->0, 1->3, 1->4, 2->4
+        graph.adj_lists = {
+            0: [1, 2],
+            1: [2, 3, 4],
+            2: [3, 4],
+            3: [4, 0],
+            4: [0]
+        }
+        graph._adj_lists_to_adj_matrix()
+        cycle = graph.find_hamiltonian_cycle_tournament()
+        self.assertIsNotNone(cycle)
+        self.assertEqual(len(cycle), 6)
+        self.assertEqual(cycle[0], cycle[-1])
+        self.assertEqual(set(cycle[:-1]), {0, 1, 2, 3, 4})
+
+    def test_hamiltonian_cycle_tournament_single_vertex(self):
+        """Турнир из одной вершины — гамильтонова цикла нет"""
+        graph = Graph(1)
+        graph.directed = True
+        graph.adj_lists = {0: []}
+        graph._adj_lists_to_adj_matrix()
+        cycle = graph.find_hamiltonian_cycle_tournament()
+        self.assertIsNone(cycle)
+
+    def test_hamiltonian_cycle_tournament_two_vertices(self):
+        """Турнир на 2 вершинах (0->1) — цикла нет"""
+        graph = Graph(2)
+        graph.directed = True
+        graph.adj_lists = {
+            0: [1],
+            1: []
+        }
+        graph._adj_lists_to_adj_matrix()
+        cycle = graph.find_hamiltonian_cycle_tournament()
+        self.assertIsNone(cycle)
+
+    def test_hamiltonian_cycle_tournament_transitive_5(self):
+        """Транзитивный турнир на 5 вершинах — не сильно связный, цикла нет"""
+        graph = Graph(5)
+        graph.directed = True
+        graph.adj_lists = {
+            0: [1, 2, 3, 4],
+            1: [2, 3, 4],
+            2: [3, 4],
+            3: [4],
+            4: []
+        }
+        graph._adj_lists_to_adj_matrix()
+        cycle = graph.find_hamiltonian_cycle_tournament()
+        self.assertIsNone(cycle)
+
+
+
+
+    def test_hamiltonian_cycle_tournament_zero_vertices(self):
+        """Пустой турнир (0 вершин) — цикла нет"""
+        graph = Graph(0)
+        graph.directed = True
+        graph.adj_lists = {}
+        graph._adj_lists_to_adj_matrix()
+        cycle = graph.find_hamiltonian_cycle_tournament()
+        self.assertIsNone(cycle)
 
 class TestGraphIO(unittest.TestCase):
 

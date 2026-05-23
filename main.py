@@ -33,7 +33,10 @@ while True:
     elif choice == '4':
         print(graph.find_eulerian_cycle())
     elif choice == '5':
-        print(graph.find_hamiltonian_cycle())
+        if graph.is_tournament():
+            print(graph.find_hamiltonian_cycle_tournament())
+        else:
+            print(graph.find_hamiltonian_cycle())
     elif choice == '6':
         print(graph.find_hamiltonian_path())
     elif choice == '7':

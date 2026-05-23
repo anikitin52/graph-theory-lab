@@ -184,6 +184,58 @@ class Graph:
 
         return None
 
+    def is_tournament(self):
+        """Проверяет, является ли ориентированный граф турниром."""
+        if not self.directed:
+            return False
+        n = self.num_vertices
+        for i in range(n):
+            for j in range(i + 1, n):
+                ij = self.adj_matrix[i][j] == 1
+                ji = self.adj_matrix[j][i] == 1
+                if ij == ji:  # либо оба 0, либо оба 1 – не турнир
+                    return False
+        return True
+
+    def find_hamiltonian_cycle_tournament(self):
+        """
+        Поиск гамильтонова цикла в турнире.
+        Возвращает список вершин цикла (длина num_vertices + 1, конец совпадает с началом)
+        или None, если цикла нет (граф не сильно связный).
+        """
+        if not self.is_tournament():
+            return None
+        n = self.num_vertices
+        if n == 0:
+            return None
+
+        # 1. Строим гамильтонов путь методом вставки
+        path = [0]
+        for v in range(1, n):
+            # вставка v в путь
+            if self.adj_matrix[v][path[0]] == 1:
+                path.insert(0, v)
+            elif self.adj_matrix[path[-1]][v] == 1:
+                path.append(v)
+            else:
+                for i in range(len(path) - 1):
+                    if self.adj_matrix[path[i]][v] == 1 and self.adj_matrix[v][path[i + 1]] == 1:
+                        path.insert(i + 1, v)
+                        break
+
+        # 2. Пытаемся замкнуть путь в цикл
+        if self.adj_matrix[path[-1]][path[0]] == 1:
+            return path + [path[0]]
+
+        # Ищем k (2 ≤ k ≤ n-1 в 1-индексации) такое, что
+        # есть рёбра path[k-1] → path[0] и path[k-2] → path[-1]
+        for k in range(2, n):  # k = 2..n-1 (позиции с 1), индекс в path = k-1
+            if self.adj_matrix[path[k - 1]][path[0]] == 1 and self.adj_matrix[path[k - 2]][path[-1]] == 1:
+                cycle = [path[0]] + path[k - 1:] + path[1:k - 1] + [path[0]]
+                return cycle
+
+        return None  # турнир не сильно связен, гамильтонова цикла нет
+
     def __str__(self):
         result = f''' Граф
 Вершин: {self.num_vertices} 

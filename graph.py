@@ -1,6 +1,5 @@
 from graph_io import *
 
-
 class Graph:
     def __init__(self, num_vertices):
         self.num_vertices = num_vertices
@@ -109,6 +108,81 @@ class Graph:
         else:
             print(f"Найден некорректный цикл длиной {len(cycle)} (ожидалось {self.num_edges + 1})")
             return None
+
+    def find_hamiltonian_cycle(self):
+        """
+        Возвращает гамильтонов цикл как список вершин (длиной num_vertices+1,
+        где последняя совпадает с первой), или None, если цикла нет.
+        """
+        if self.num_vertices < 3:
+            print('No Hamiltonian cycle')
+            return None
+
+        # Начинаем с вершины 0, можно выбрать любую
+        start = 0
+        path = [start]
+        visited = [False] * self.num_vertices
+        visited[start] = True
+
+        # Рекурсивный backtracking
+        def backtrack(v):
+            if len(path) == self.num_vertices:
+                # Проверяем, есть ли ребро из последней вершины в стартовую
+                if start in self.adj_lists[path[-1]]:
+                    return True
+                return False
+
+            for neighbour in self.adj_lists[v]:
+                if not visited[neighbour]:
+                    visited[neighbour] = True
+                    path.append(neighbour)
+                    if backtrack(neighbour):
+                        return True
+                    # Откат
+                    visited[neighbour] = False
+                    path.pop()
+            return False
+
+        if backtrack(start):
+            # Формируем цикл с возвратом в начальную вершину
+            cycle = path + [start]
+            return cycle
+        else:
+            print('No Hamiltonian cycle')
+            return None
+
+    def find_hamiltonian_path(self):
+        """
+        Поиск гамильтонова пути в обыкновенном графе.
+        Возвращает список вершин пути (длиной num_vertices) или None,
+        если путь не существует.
+        """
+        if self.num_vertices == 0:
+            return None
+
+        # Пробуем каждую вершину в качестве начальной
+        for start in range(self.num_vertices):
+            path = [start]
+            visited = [False] * self.num_vertices
+            visited[start] = True
+
+            def backtrack(v):
+                if len(path) == self.num_vertices:
+                    return True
+                for neighbour in self.adj_lists[v]:
+                    if not visited[neighbour]:
+                        visited[neighbour] = True
+                        path.append(neighbour)
+                        if backtrack(neighbour):
+                            return True
+                        visited[neighbour] = False
+                        path.pop()
+                return False
+
+            if backtrack(start):
+                return path
+
+        return None
 
     def __str__(self):
         result = f''' Граф

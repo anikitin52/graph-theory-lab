@@ -1,9 +1,10 @@
+import random
 import unittest
 import time
 import matplotlib.pyplot as plt
 from graph import Graph
 from graph_io import *
-
+from sys import setrecursionlimit
 
 class TestGraph(unittest.TestCase):
 
@@ -661,7 +662,7 @@ class TestGraph(unittest.TestCase):
         graph._adj_lists_to_adj_matrix()
         cycle = graph.find_hamiltonian_cycle_tournament()
         self.assertIsNotNone(cycle)
-        self.assertEqual(len(cycle), 4)                     # n+1
+        self.assertEqual(len(cycle), 4)  # n+1
         self.assertEqual(cycle[0], cycle[-1])
         self.assertEqual(sorted(cycle[:-1]), [0, 1, 2])
 
@@ -754,9 +755,6 @@ class TestGraph(unittest.TestCase):
         cycle = graph.find_hamiltonian_cycle_tournament()
         self.assertIsNone(cycle)
 
-
-
-
     def test_hamiltonian_cycle_tournament_zero_vertices(self):
         """Пустой турнир (0 вершин) — цикла нет"""
         graph = Graph(0)
@@ -765,6 +763,7 @@ class TestGraph(unittest.TestCase):
         graph._adj_lists_to_adj_matrix()
         cycle = graph.find_hamiltonian_cycle_tournament()
         self.assertIsNone(cycle)
+
 
 class TestGraphIO(unittest.TestCase):
 
@@ -835,9 +834,22 @@ import matplotlib.pyplot as plt
 
 class TestPerformance(unittest.TestCase):
 
+    def _plot_performance(self, sizes, times, title, filename):
+        """Вспомогательный метод для построения графика производительности"""
+        plt.figure(figsize=(10, 6))
+        plt.plot(sizes, times, 'b-', linewidth=2)
+        plt.xlabel('Количество вершин')
+        plt.ylabel('Время выполнения (мс)')
+        plt.title(title)
+        plt.grid(True, alpha=0.3)
+        plt.savefig(filename, dpi=300, bbox_inches='tight')
+        plt.close()
+
+    # ==================== Эйлеров цикл ====================
+
     def test_eulerian_cycle_performance(self):
         """Тест производительности алгоритма поиска Эйлерова цикла"""
-        print("\n--- Тестирование производительности ---")
+        print("\n--- Тестирование производительности: Эйлеров цикл ---")
 
         sizes = [100, 200, 500, 1000, 2000, 5000, 10000, 15000, 20000]
         times = []
@@ -846,7 +858,6 @@ class TestPerformance(unittest.TestCase):
             graph = Graph(size)
             graph.directed = False
 
-            # Создаем циклический граф
             for i in range(size):
                 prev_vertex = (i - 1) % size
                 next_vertex = (i + 1) % size
@@ -866,12 +877,214 @@ class TestPerformance(unittest.TestCase):
             self.assertIsNotNone(cycle)
             self.assertEqual(cycle[0], cycle[-1])
 
-        # Строим график
-        plt.figure(figsize=(10, 6))
-        plt.plot(sizes, times, 'bo-', linewidth=2, markersize=8)
-        plt.xlabel('Количество вершин')
-        plt.ylabel('Время выполнения (мс)')
-        plt.title('Зависимость времени поиска Эйлерова цикла от размера графа')
-        plt.grid(True, alpha=0.3)
-        plt.savefig('performance_graph.png', dpi=300, bbox_inches='tight')
-        plt.close()
+        self._plot_performance(
+            sizes, times,
+            'Зависимость времени поиска Эйлерова цикла от размера графа',
+            'performance_eulerian_cycle.png'
+        )
+
+    # ==================== Гамильтонов цикл: случайные графы ====================
+
+    def test_hamiltonian_cycle_random_performance(self):
+        """Тест производительности поиска гамильтонова цикла на случайных графах"""
+        print("\n--- Тестирование производительности: Гамильтонов цикл (случайные графы) ---")
+        setrecursionlimit(100000)
+        sizes = [i for i in range(1, 2000, 50)]
+        times = []
+
+        for size in sizes:
+            graph = Graph(size)
+            graph.directed = False
+
+            for i in range(size):
+                neighbors = [(i - 1) % size, (i + 1) % size]
+                for j in range(size):
+                    if j != i and j not in neighbors and random.random() < 0.3:
+                        neighbors.append(j)
+                graph.adj_lists[i] = neighbors
+
+            start_time = time.time()
+            cycle = graph.find_hamiltonian_cycle()
+            end_time = time.time()
+
+            execution_time = (end_time - start_time) * 1000
+            times.append(execution_time)
+
+            print(f"Граф с {size} вершинами: {execution_time:.4f} мс")
+
+        self._plot_performance(
+            sizes, times,
+            'Поиск гамильтонова цикла на случайных графах',
+            'performance_hamiltonian_random.png'
+        )
+
+    # ==================== Гамильтонов цикл: двудольные графы ====================
+
+    def test_hamiltonian_cycle_bipartite_performance(self):
+        """Тест производительности поиска гамильтонова цикла на полных двудольных графах"""
+        print("\n--- Тестирование производительности: Гамильтонов цикл (полные двудольные графы) ---")
+        setrecursionlimit(10000)
+        sizes = [i for i in range(2, 1000, 10)]
+        times = []
+
+        for size in sizes:
+            graph = Graph(size)
+            graph.directed = False
+
+            half = size // 2
+            for i in range(size):
+                neighbors = []
+                if i < half:
+                    for j in range(half, size):
+                        neighbors.append(j)
+                else:
+                    for j in range(half):
+                        neighbors.append(j)
+                graph.adj_lists[i] = neighbors
+            graph._adj_lists_to_adj_matrix()
+
+            start_time = time.time()
+            cycle = graph.find_hamiltonian_cycle()
+            end_time = time.time()
+
+            execution_time = (end_time - start_time) * 1000
+            times.append(execution_time)
+
+            print(f"Граф с {size} вершинами: {execution_time:.4f} мс")
+
+        self._plot_performance(
+            sizes, times,
+            'Поиск гамильтонова цикла на полных двудольных графах',
+            'performance_hamiltonian_bipartite.png'
+        )
+
+    # ==================== Гамильтонов цикл: расщепляемые графы ====================
+
+    def test_hamiltonian_cycle_split_performance(self):
+        """Тест производительности поиска гамильтонова цикла на расщепляемых графах"""
+        print("\n--- Тестирование производительности: Гамильтонов цикл (расщепляемые графы) ---")
+
+        sizes = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+        times = []
+
+        for size in sizes:
+            graph = Graph(size)
+            graph.directed = False
+
+            clique_size = size // 2
+            for i in range(size):
+                neighbors = []
+                if i < clique_size:
+                    for j in range(clique_size):
+                        if i != j:
+                            neighbors.append(j)
+                    for j in range(clique_size, size - 1):
+                        neighbors.append(j)
+                else:
+                    for j in range(clique_size - 1):
+                        neighbors.append(j)
+                graph.adj_lists[i] = neighbors
+            graph._adj_lists_to_adj_matrix()
+
+            start_time = time.time()
+            cycle = graph.find_hamiltonian_cycle()
+            end_time = time.time()
+
+            execution_time = (end_time - start_time) * 1000
+            times.append(execution_time)
+
+            print(f"Граф с {size} вершинами: {execution_time:.4f} мс")
+
+        self._plot_performance(
+            sizes, times,
+            'Поиск гамильтонова цикла на расщепляемых графах',
+            'performance_hamiltonian_split.png'
+        )
+
+    # ==================== Гамильтонов цикл: дополнения двудольных ====================
+
+    def test_hamiltonian_cycle_cobipartite_performance(self):
+        """Тест производительности поиска гамильтонова цикла на дополнениях двудольных графов"""
+        print("\n--- Тестирование производительности: Гамильтонов цикл (дополнения двудольных) ---")
+
+        sizes = [6, 8, 10, 12, 14, 16, 18, 20, 22]
+        times = []
+
+        for size in sizes:
+            graph = Graph(size)
+            graph.directed = False
+
+            half = size // 2
+            for i in range(size):
+                neighbors = []
+                if i < half:
+                    for j in range(half):
+                        if i != j:
+                            neighbors.append(j)
+                    for j in range(half, size):
+                        if j != half:
+                            neighbors.append(j)
+                else:
+                    for j in range(half, size):
+                        if i != j:
+                            neighbors.append(j)
+                    for j in range(half):
+                        if j != 0:
+                            neighbors.append(j)
+                graph.adj_lists[i] = neighbors
+            graph._adj_lists_to_adj_matrix()
+
+            start_time = time.time()
+            cycle = graph.find_hamiltonian_cycle()
+            end_time = time.time()
+
+            execution_time = (end_time - start_time) * 1000
+            times.append(execution_time)
+
+            print(f"Граф с {size} вершинами: {execution_time:.4f} мс")
+
+        self._plot_performance(
+            sizes, times,
+            'Поиск гамильтонова цикла на дополнениях двудольных графов',
+            'performance_hamiltonian_cobipartite.png'
+        )
+
+    # ==================== Гамильтонов цикл: триангулированные графы ====================
+
+    def test_hamiltonian_cycle_triangular_performance(self):
+        """Тест производительности поиска гамильтонова цикла на триангулированных графах"""
+        print("\n--- Тестирование производительности: Гамильтонов цикл (триангулированные графы) ---")
+
+        sizes = [5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
+        times = []
+
+        for size in sizes:
+            graph = Graph(size)
+            graph.directed = False
+
+            for i in range(size):
+                neighbors = []
+                for j in range(size):
+                    if i != j:
+                        if abs(i - j) <= 2:
+                            neighbors.append(j)
+                        elif abs(i - j) == size - 1:
+                            neighbors.append(j)
+                graph.adj_lists[i] = neighbors
+            graph._adj_lists_to_adj_matrix()
+
+            start_time = time.time()
+            cycle = graph.find_hamiltonian_cycle()
+            end_time = time.time()
+
+            execution_time = (end_time - start_time) * 1000
+            times.append(execution_time)
+
+            print(f"Граф с {size} вершинами: {execution_time:.4f} мс")
+
+        self._plot_performance(
+            sizes, times,
+            'Поиск гамильтонова цикла на триангулированных графах',
+            'performance_hamiltonian_chordal.png'
+        )
+

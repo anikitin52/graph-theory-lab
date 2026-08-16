@@ -1,15 +1,29 @@
 def input_adj_matrix(num_vertices):
-    print("Введите матрицу смежности")
-    adj_matrix = []
+    """
+    Ввод матрицы смежности
+    :param num_vertices: Количество вершин
+    :return: Матрица смежности (список списков)
+    """
 
+    print("Введите матрицу смежности")
+    adj_matrix = []  # Инициализация матрицы
+
+    # Заполнение матрицы
     for i in range(num_vertices):
-        row = list(map(int, input().split()))
+        try:
+            row = list(map(int, input().split()))
+        except ValueError:
+            raise ValueError(
+                f'Ошибка ввода в строке {i+1}: все значения должны быть целыми числами. '
+            )
+        if len(row) != num_vertices:
+            raise ValueError(
+                f'Ошибка ввода матрицы смежности: '
+                f'ожидалось {num_vertices} элементов, получено {len(row)}'
+            )
         adj_matrix.append(row)
 
-    is_directed = is_directed_by_matrix(adj_matrix)
-    edges = count_edges_from_matrix(adj_matrix, is_directed)
-
-    return adj_matrix, is_directed, edges
+    return adj_matrix
 
 
 def input_adj_lists(num_vertices):
@@ -71,6 +85,7 @@ def count_edges_from_matrix(matrix, is_directed):
                     edges += 1
         return edges
 
+
 def count_edges_from_lists(lists, is_directed):
     if is_directed:
         return sum(len(neighbors) for neighbors in lists.values())
@@ -82,3 +97,6 @@ def count_edges_from_lists(lists, is_directed):
                 edge = (min(vertex, neighbor), max(vertex, neighbor))
                 edges.add(edge)
         return len(edges)
+
+
+'''

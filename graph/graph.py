@@ -11,6 +11,7 @@ class Graph:
 
     def set_adj_matrix(self):
         res = input_adj_matrix(self.num_vertices)
+        # TODO: заменить результат из input_adj_matrix на результат соответствующих функций
         self.adj_matrix = res[0]
         self.directed = res[1]
         self.num_edges = res[2]

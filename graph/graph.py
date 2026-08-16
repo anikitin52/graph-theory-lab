@@ -1,4 +1,5 @@
-from graph_io import *
+from graph_input import input_adj_matrix
+from graph_input import input_adj_lists
 
 
 class Graph:
@@ -17,19 +18,19 @@ class Graph:
         :return:
         """
         self.adj_matrix = input_adj_matrix(self.num_vertices)  # Матрица смежности
-        self.directed = self._is_directed_by_matrix()          # Ориентированность графа
-        self.num_edges = self._count_edges_from_matrix()       # Количество ребер
-        self._adj_matrix_to_adj_lists()                        # Перевод в списки смежности
+        self.directed = self._is_directed_by_matrix()  # Ориентированность графа
+        self.num_edges = self._count_edges_from_matrix()  # Количество ребер
+        self._adj_matrix_to_adj_lists()  # Перевод в списки смежности
 
     def set_adj_list(self):
         """
         Задание графа списками смежности
         :return:
         """
-        self.adj_lists = input_adj_lists(self.num_vertices)    # Списки смежности
-        self.directed = self._is_directed_by_lists()           # Ориентированность графа
-        self.num_edges = self._count_edges_from_lists()        # Количество ребер
-        self._adj_lists_to_adj_matrix()                        # Перевод в матрицу смежности
+        self.adj_lists = input_adj_lists(self.num_vertices)  # Списки смежности
+        self.directed = self._is_directed_by_lists()  # Ориентированность графа
+        self.num_edges = self._count_edges_from_lists()  # Количество ребер
+        self._adj_lists_to_adj_matrix()  # Перевод в матрицу смежности
 
     # КЛАССИФИКАЦИЯ ГРАФА
     def _is_directed_by_matrix(self):

@@ -127,6 +127,28 @@ class Graph:
                 if not self._directed:
                     self._adj_matrix[neighbour][vertex] = 1
 
+    def __str__(self):
+        """
+        Преобразование графа в строку
+        :return: Строковое описание графа
+        """
+        result = f''' Граф
+            Вершин: {self._num_vertices} 
+            Ребер: {self._num_edges}
+            {'ориентированный' if self._directed else 'неориeнтированный'} 
+            '''
+        result += "\nМатрица смежности \n"
+        for row in self._adj_matrix:
+            result += ' '.join(map(str, row)) + '\n'
+
+        result += "Списки смежности: \n"
+        for vertex in sorted(self._adj_lists.keys()):
+            # Преобразуем обратно к 1-based для отображения
+            neighbors_1based = [x + 1 for x in self._adj_lists[vertex]]
+            result += f'{vertex + 1}: {neighbors_1based}\n'
+
+        return result
+
     # ДРУГОЕ
 
 
@@ -329,22 +351,3 @@ class Graph:
 
         return None  # турнир не сильно связен, гамильтонова цикла нет
 '''
-"""
-    def __str__(self):
-        result = f''' Граф
-Вершин: {self.num_vertices} 
-Ребер: {self.num_edges}
-{'ориентированный' if self.directed else 'неориeнтированный'} 
-        '''
-        result += "\nМатрица смежности \n"
-        for row in self.adj_matrix:
-            result += ' '.join(map(str, row)) + '\n'
-
-        result += "Списки смежности: \n"
-        for vertex in sorted(self.adj_lists.keys()):
-            # Преобразуем обратно к 1-based для отображения
-            neighbors_1based = [x + 1 for x in self.adj_lists[vertex]]
-            result += f'{vertex + 1}: {neighbors_1based}\n'
-
-        reurn result
-"""

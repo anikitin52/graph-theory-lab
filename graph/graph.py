@@ -15,7 +15,7 @@ class Graph:
         # TODO: заменить результат из input_adj_matrix на результат соответствующих функций
         self.adj_matrix = input_adj_matrix(self.num_vertices)
         self.directed = self._is_directed_by_matrix()
-        self.num_edges = res[2]
+        self.num_edges = self._count_edges_from_matrix()
         self._adj_matrix_to_adj_lists()
 
     def set_adj_list(self):
@@ -31,7 +31,6 @@ class Graph:
         Определяет, является ли граф ориентированным по его матрице смежности
         :return: статус ориентированности графа
         """
-
         matrix = self.adj_matrix
         n = len(matrix)
         for i in range(n):
@@ -45,7 +44,6 @@ class Graph:
         Определяет, является ли граф ориентированным по его спискам смежности
         :return: статус ориентированности графа
         """
-
         lists = self.adj_lists
         all_edges = set()  # Создание множества всех ребер
         for vertex, neighbors in lists.items():
@@ -57,6 +55,46 @@ class Graph:
             if (v, u) not in all_edges:
                 return True
         return False
+
+    def _count_edges_from_matrix(self):
+        """
+        Подсчет ребер по матрице смежности
+        :return: количество ребер в графе
+        """
+        n = len(self.adj_matrix)
+        matrix = self.adj_matrix
+        edges = 0
+
+        if self.directed:
+            # Граф ориентированный. Считаем все ненулевые элементы
+            for i in range(n):
+                for j in range(n):
+                    if matrix[i][j] != 0:
+                        edges += 1
+            return edges
+        else:
+            # Граф неориентированный. Считаем только верхний треугольник
+            for i in range(n):
+                for j in range(i, n):
+                    if matrix[i][j] != 0:
+                        edges += 1
+            return edges
+
+    def _count_edges_from_lists(self):
+        """
+        Подсчет ребер по спискам смежности
+        :return: количество ребер в графе
+        """
+        if self.directed:
+            return sum(len(neighbors) for neighbors in self.adj_lists.values())
+        else:
+            edges = set()
+
+            for vertex, neighbors in self.adj_lists.items():
+                for neighbor in neighbors:
+                    edge = (min(vertex, neighbor), max(vertex, neighbor))
+                    edges.add(edge)
+            return len(edges)
 
     # ДРУГОЕ
     def _adj_matrix_to_adj_lists(self):

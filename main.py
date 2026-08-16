@@ -17,7 +17,9 @@ while True:
     2. Ввести списки смежности
     3. Показать информацию о графе 
     4. Найти эйлеров цикл 
-    5. Выход
+    5. Найти гамильтонов цикл
+    6. Найти гамильтонов путь
+    7. Выход
     ''')
 
     choice = input("Выберите действие: ").strip()
@@ -31,6 +33,13 @@ while True:
     elif choice == '4':
         print(graph.find_eulerian_cycle())
     elif choice == '5':
+        if graph.is_tournament():
+            print(graph.find_hamiltonian_cycle_tournament())
+        else:
+            print(graph.find_hamiltonian_cycle())
+    elif choice == '6':
+        print(graph.find_hamiltonian_path())
+    elif choice == '7':
         print("Выход из программы ...")
         break
     else:

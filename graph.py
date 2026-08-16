@@ -1,6 +1,5 @@
 from graph_io import *
 
-
 class Graph:
     def __init__(self, num_vertices):
         self.num_vertices = num_vertices
@@ -109,6 +108,133 @@ class Graph:
         else:
             print(f"Найден некорректный цикл длиной {len(cycle)} (ожидалось {self.num_edges + 1})")
             return None
+
+    def find_hamiltonian_cycle(self):
+        """
+        Возвращает гамильтонов цикл как список вершин (длиной num_vertices+1,
+        где последняя совпадает с первой), или None, если цикла нет.
+        """
+        if self.num_vertices < 3:
+            print('No Hamiltonian cycle')
+            return None
+
+        # Начинаем с вершины 0, можно выбрать любую
+        start = 0
+        path = [start]
+        visited = [False] * self.num_vertices
+        visited[start] = True
+
+        # Рекурсивный backtracking
+        def backtrack(v):
+            if len(path) == self.num_vertices:
+                # Проверяем, есть ли ребро из последней вершины в стартовую
+                if start in self.adj_lists[path[-1]]:
+                    return True
+                return False
+
+            for neighbour in self.adj_lists[v]:
+                if not visited[neighbour]:
+                    visited[neighbour] = True
+                    path.append(neighbour)
+                    if backtrack(neighbour):
+                        return True
+                    # Откат
+                    visited[neighbour] = False
+                    path.pop()
+            return False
+
+        if backtrack(start):
+            # Формируем цикл с возвратом в начальную вершину
+            cycle = path + [start]
+            return cycle
+        else:
+            print('No Hamiltonian cycle')
+            return None
+
+    def find_hamiltonian_path(self):
+        """
+        Поиск гамильтонова пути в обыкновенном графе.
+        Возвращает список вершин пути (длиной num_vertices) или None,
+        если путь не существует.
+        """
+        if self.num_vertices == 0:
+            return None
+
+        # Пробуем каждую вершину в качестве начальной
+        for start in range(self.num_vertices):
+            path = [start]
+            visited = [False] * self.num_vertices
+            visited[start] = True
+
+            def backtrack(v):
+                if len(path) == self.num_vertices:
+                    return True
+                for neighbour in self.adj_lists[v]:
+                    if not visited[neighbour]:
+                        visited[neighbour] = True
+                        path.append(neighbour)
+                        if backtrack(neighbour):
+                            return True
+                        visited[neighbour] = False
+                        path.pop()
+                return False
+
+            if backtrack(start):
+                return path
+
+        return None
+
+    def is_tournament(self):
+        """Проверяет, является ли ориентированный граф турниром."""
+        if not self.directed:
+            return False
+        n = self.num_vertices
+        for i in range(n):
+            for j in range(i + 1, n):
+                ij = self.adj_matrix[i][j] == 1
+                ji = self.adj_matrix[j][i] == 1
+                if ij == ji:  # либо оба 0, либо оба 1 – не турнир
+                    return False
+        return True
+
+    def find_hamiltonian_cycle_tournament(self):
+        """
+        Поиск гамильтонова цикла в турнире.
+        Возвращает список вершин цикла (длина num_vertices + 1, конец совпадает с началом)
+        или None, если цикла нет (граф не сильно связный).
+        """
+        if not self.is_tournament():
+            return None
+        n = self.num_vertices
+        if n == 0:
+            return None
+
+        # 1. Строим гамильтонов путь методом вставки
+        path = [0]
+        for v in range(1, n):
+            # вставка v в путь
+            if self.adj_matrix[v][path[0]] == 1:
+                path.insert(0, v)
+            elif self.adj_matrix[path[-1]][v] == 1:
+                path.append(v)
+            else:
+                for i in range(len(path) - 1):
+                    if self.adj_matrix[path[i]][v] == 1 and self.adj_matrix[v][path[i + 1]] == 1:
+                        path.insert(i + 1, v)
+                        break
+
+        # 2. Пытаемся замкнуть путь в цикл
+        if self.adj_matrix[path[-1]][path[0]] == 1:
+            return path + [path[0]]
+
+        # Ищем k (2 ≤ k ≤ n-1 в 1-индексации) такое, что
+        # есть рёбра path[k-1] → path[0] и path[k-2] → path[-1]
+        for k in range(2, n):  # k = 2..n-1 (позиции с 1), индекс в path = k-1
+            if self.adj_matrix[path[k - 1]][path[0]] == 1 and self.adj_matrix[path[k - 2]][path[-1]] == 1:
+                cycle = [path[0]] + path[k - 1:] + path[1:k - 1] + [path[0]]
+                return cycle
+
+        return None  # турнир не сильно связен, гамильтонова цикла нет
 
     def __str__(self):
         result = f''' Граф

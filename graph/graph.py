@@ -86,7 +86,7 @@ class Graph:
                         edges += 1
             return edges
 
-    def _count_edges_from_lists(self)
+    def _count_edges_from_lists(self):
         """
         Подсчет ребер по спискам смежности
         :return: количество ребер в графе

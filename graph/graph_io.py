@@ -1,7 +1,7 @@
 def input_adj_matrix(num_vertices):
     """
-    Ввод матрицы смежности
-    :param num_vertices: Количество вершин
+    Задание графа с помощью матрицы смежности
+    :param num_vertices: количество вершин в графе
     :return: Матрица смежности (список списков)
     """
 
@@ -14,7 +14,7 @@ def input_adj_matrix(num_vertices):
             row = list(map(int, input().split()))
         except ValueError:
             raise ValueError(
-                f'Ошибка ввода в строке {i+1}: все значения должны быть целыми числами. '
+                f'Ошибка ввода в строке {i + 1}: все значения должны быть целыми числами. '
             )
         if len(row) != num_vertices:
             raise ValueError(
@@ -27,20 +27,32 @@ def input_adj_matrix(num_vertices):
 
 
 def input_adj_lists(num_vertices):
+    """
+    Задание графа с помощью списков смежности
+    :param num_vertices: количество вершин в графе
+    :return: списки смежности
+    """
     print("Введите списки смежности")
+    adj_list = {}  # Инициализация словаря {номер вершины: список вершин}
 
-    adj_list = {}
     for i in range(num_vertices):
-        # Показываем пользователю вершины с 1, но храним с 0
-        neighbours = list(map(int, input(f'Вершина {i + 1}: ').split()))
-        # Преобразуем в 0-based индексы
-        neighbours = [x - 1 for x in neighbours]
+        try:
+            neighbours = list(
+                map(int, input(f'Вершина {i + 1}: ').split()))  # Показываем пользователю вершины с 1, но храним с 0
+        except ValueError:
+            raise ValueError(
+                f'Ошибка ввода в строке {i + 1}: все значения должны быть целыми числами. '
+            )
+        for x in neighbours:
+            if not 1 <= x <= num_vertices:
+                raise ValueError(
+                    f'Ошибка ввода в строке {i+1}: вершины {x} не существует'
+                )
+
+        neighbours = [x - 1 for x in neighbours]  # Преобразуем в 0-based индексы
         adj_list[i] = neighbours
 
-    is_directed = is_directed_by_lists(adj_list)
-    edges = count_edges_from_lists(adj_list, is_directed)
-
-    return adj_list, is_directed, edges
+    return adj_list
 
 
 def is_directed_by_matrix(matrix):

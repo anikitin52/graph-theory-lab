@@ -19,6 +19,7 @@ class Graph:
 
     def set_adj_list(self):
         res = input_adj_lists(self.num_vertices)
+        # TODO: заменить результат из input_adj_lists на результат соответствующих функций
         self.adj_lists = res[0]
         self.directed = res[1]
         self.num_edges = res[2]

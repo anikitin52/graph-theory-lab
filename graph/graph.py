@@ -12,18 +12,24 @@ class Graph:
 
     # ВВОД ДАННЫХ
     def set_adj_matrix(self):
-        # TODO: заменить результат из input_adj_matrix на результат соответствующих функций
-        self.adj_matrix = input_adj_matrix(self.num_vertices)
-        self.directed = self._is_directed_by_matrix()
-        self.num_edges = self._count_edges_from_matrix()
-        self._adj_matrix_to_adj_lists()
+        """
+        Задание графа матрицей смежности
+        :return:
+        """
+        self.adj_matrix = input_adj_matrix(self.num_vertices)  # Матрица смежности
+        self.directed = self._is_directed_by_matrix()          # Ориентированность графа
+        self.num_edges = self._count_edges_from_matrix()       # Количество ребер
+        self._adj_matrix_to_adj_lists()                        # Перевод в списки смежности
 
     def set_adj_list(self):
-        # TODO: заменить результат из input_adj_lists на результат соответствующих функций
-        self.adj_lists = input_adj_lists(self.num_vertices)
-        self.directed = self._is_directed_by_lists()
-        self.num_edges = res[2]
-        self._adj_lists_to_adj_matrix()
+        """
+        Задание графа списками смежности
+        :return:
+        """
+        self.adj_lists = input_adj_lists(self.num_vertices)    # Списки смежности
+        self.directed = self._is_directed_by_lists()           # Ориентированность графа
+        self.num_edges = self._count_edges_from_lists()        # Количество ребер
+        self._adj_lists_to_adj_matrix()                        # Перевод в матрицу смежности
 
     # КЛАССИФИКАЦИЯ ГРАФА
     def _is_directed_by_matrix(self):
@@ -80,7 +86,7 @@ class Graph:
                         edges += 1
             return edges
 
-    def _count_edges_from_lists(self):
+    def _count_edges_from_lists(self)
         """
         Подсчет ребер по спискам смежности
         :return: количество ребер в графе

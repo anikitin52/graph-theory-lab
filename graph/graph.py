@@ -4,12 +4,12 @@ from graph_input import input_adj_lists
 
 class Graph:
     def __init__(self, num_vertices):
-        self.num_vertices = num_vertices
+        self._num_vertices = num_vertices
 
-        self.num_edges = 0
-        self.directed = False
-        self.adj_matrix = [[0] * self.num_vertices for _ in range(self.num_vertices)]
-        self.adj_lists = {i: [] for i in range(self.num_vertices)}
+        self._num_edges = 0
+        self._directed = False
+        self._adj_matrix = [[0] * self._num_vertices for _ in range(self._num_vertices)]
+        self._adj_lists = {i: [] for i in range(self._num_vertices)}
 
     # ВВОД ДАННЫХ
     def set_adj_matrix(self):
@@ -17,9 +17,9 @@ class Graph:
         Задание графа матрицей смежности
         :return:
         """
-        self.adj_matrix = input_adj_matrix(self.num_vertices)  # Матрица смежности
-        self.directed = self._is_directed_by_matrix()  # Ориентированность графа
-        self.num_edges = self._count_edges_from_matrix()  # Количество ребер
+        self._adj_matrix = input_adj_matrix(self._num_vertices)  # Матрица смежности
+        self._directed = self._is_directed_by_matrix()  # Ориентированность графа
+        self._num_edges = self._count_edges_from_matrix()  # Количество ребер
         self._adj_matrix_to_adj_lists()  # Перевод в списки смежности
 
     def set_adj_list(self):
@@ -27,9 +27,9 @@ class Graph:
         Задание графа списками смежности
         :return:
         """
-        self.adj_lists = input_adj_lists(self.num_vertices)  # Списки смежности
-        self.directed = self._is_directed_by_lists()  # Ориентированность графа
-        self.num_edges = self._count_edges_from_lists()  # Количество ребер
+        self._adj_lists = input_adj_lists(self._num_vertices)  # Списки смежности
+        self._directed = self._is_directed_by_lists()  # Ориентированность графа
+        self._num_edges = self._count_edges_from_lists()  # Количество ребер
         self._adj_lists_to_adj_matrix()  # Перевод в матрицу смежности
 
     # КЛАССИФИКАЦИЯ ГРАФА
@@ -38,7 +38,7 @@ class Graph:
         Определяет, является ли граф ориентированным по его матрице смежности
         :return: статус ориентированности графа
         """
-        matrix = self.adj_matrix
+        matrix = self._adj_matrix
         n = len(matrix)
         for i in range(n):
             for j in range(i + 1, n):
@@ -51,7 +51,7 @@ class Graph:
         Определяет, является ли граф ориентированным по его спискам смежности
         :return: статус ориентированности графа
         """
-        lists = self.adj_lists
+        lists = self._adj_lists
         all_edges = set()  # Создание множества всех ребер
         for vertex, neighbors in lists.items():
             for neighbor in neighbors:
@@ -68,11 +68,11 @@ class Graph:
         Подсчет ребер по матрице смежности
         :return: количество ребер в графе
         """
-        n = len(self.adj_matrix)
-        matrix = self.adj_matrix
+        n = len(self._adj_matrix)
+        matrix = self._adj_matrix
         edges = 0
 
-        if self.directed:
+        if self._directed:
             # Граф ориентированный. Считаем все ненулевые элементы
             for i in range(n):
                 for j in range(n):
@@ -92,33 +92,45 @@ class Graph:
         Подсчет ребер по спискам смежности
         :return: количество ребер в графе
         """
-        if self.directed:
-            return sum(len(neighbors) for neighbors in self.adj_lists.values())
+        if self._directed:
+            return sum(len(neighbors) for neighbors in self._adj_lists.values())
         else:
             edges = set()
 
-            for vertex, neighbors in self.adj_lists.items():
+            for vertex, neighbors in self._adj_lists.items():
                 for neighbor in neighbors:
                     edge = (min(vertex, neighbor), max(vertex, neighbor))
                     edges.add(edge)
             return len(edges)
 
-    # ДРУГОЕ
+    # ПРЕОБРАЗОВАНИЯ
     def _adj_matrix_to_adj_lists(self):
-        self.adj_lists = {i: [] for i in range(self.num_vertices)}
-        for i in range(self.num_vertices):
-            for j in range(self.num_vertices):
-                if self.adj_matrix[i][j] != 0:
-                    self.adj_lists[i].append(j)
+        """
+        Преобразование из матрицы смежности в списки смежности
+        :return: None
+        """
+        self._adj_lists = {i: [] for i in range(self._num_vertices)}
+        for i in range(self._num_vertices):
+            for j in range(self._num_vertices):
+                if self._adj_matrix[i][j] != 0:
+                    self._adj_lists[i].append(j)
 
     def _adj_lists_to_adj_matrix(self):
-        self.adj_matrix = [[0] * self.num_vertices for _ in range(self.num_vertices)]
-        for vertex, neighbors in self.adj_lists.items():
-            for neighbor in neighbors:
-                self.adj_matrix[vertex][neighbor] = 1
-                if not self.directed:
-                    self.adj_matrix[neighbor][vertex] = 1
+        """
+        Преобразование из списков смежности в матрицу смежности
+        :return: None
+        """
+        self._adj_matrix = [[0] * self._num_vertices for _ in range(self._num_vertices)]
+        for vertex, neighbours in self._adj_lists.items():
+            for neighbour in neighbours:
+                self._adj_matrix[vertex][neighbour] = 1
+                if not self._directed:
+                    self._adj_matrix[neighbour][vertex] = 1
 
+    # ДРУГОЕ
+
+
+'''
     def _is_eulerian(self):
         if self.directed:
             out_degree = [len(self.adj_lists[i]) for i in range(self.num_vertices)]
@@ -316,7 +328,8 @@ class Graph:
                 return cycle
 
         return None  # турнир не сильно связен, гамильтонова цикла нет
-
+'''
+"""
     def __str__(self):
         result = f''' Граф
 Вершин: {self.num_vertices} 
@@ -333,4 +346,5 @@ class Graph:
             neighbors_1based = [x + 1 for x in self.adj_lists[vertex]]
             result += f'{vertex + 1}: {neighbors_1based}\n'
 
-        return result
+        reurn result
+"""

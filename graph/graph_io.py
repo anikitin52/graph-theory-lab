@@ -32,6 +32,7 @@ def input_adj_lists(num_vertices):
     :param num_vertices: количество вершин в графе
     :return: списки смежности
     """
+
     print("Введите списки смежности")
     adj_list = {}  # Инициализация словаря {номер вершины: список вершин}
 
@@ -55,27 +56,10 @@ def input_adj_lists(num_vertices):
     return adj_list
 
 
-def is_directed_by_matrix(matrix):
-    n = len(matrix)
-    for i in range(n):
-        for j in range(i + 1, n):
-            if matrix[i][j] != matrix[j][i]:
-                return True
-    return False
 
 
-def is_directed_by_lists(lists):
-    # Создание множества всех ребер
-    all_edges = set()
-    for vertex, neighbors in lists.items():
-        for neighbor in neighbors:
-            all_edges.add((vertex, neighbor))
 
-    # Проверка наличия обратных ребер
-    for u, v in all_edges:
-        if (v, u) not in all_edges:
-            return True
-    return False
+
 
 
 def count_edges_from_matrix(matrix, is_directed):

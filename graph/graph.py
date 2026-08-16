@@ -1,5 +1,6 @@
 from graph_io import *
 
+
 class Graph:
     def __init__(self, num_vertices):
         self.num_vertices = num_vertices
@@ -9,22 +10,55 @@ class Graph:
         self.adj_matrix = [[0] * self.num_vertices for _ in range(self.num_vertices)]
         self.adj_lists = {i: [] for i in range(self.num_vertices)}
 
+    # ВВОД ДАННЫХ
     def set_adj_matrix(self):
-        res = input_adj_matrix(self.num_vertices)
         # TODO: заменить результат из input_adj_matrix на результат соответствующих функций
-        self.adj_matrix = res[0]
-        self.directed = res[1]
+        self.adj_matrix = input_adj_matrix(self.num_vertices)
+        self.directed = self._is_directed_by_matrix()
         self.num_edges = res[2]
         self._adj_matrix_to_adj_lists()
 
     def set_adj_list(self):
-        res = input_adj_lists(self.num_vertices)
         # TODO: заменить результат из input_adj_lists на результат соответствующих функций
-        self.adj_lists = res[0]
-        self.directed = res[1]
+        self.adj_lists = input_adj_lists(self.num_vertices)
+        self.directed = self._is_directed_by_lists()
         self.num_edges = res[2]
         self._adj_lists_to_adj_matrix()
 
+    # КЛАССИФИКАЦИЯ ГРАФА
+    def _is_directed_by_matrix(self):
+        """
+        Определяет, является ли граф ориентированным по его матрице смежности
+        :return: статус ориентированности графа
+        """
+
+        matrix = self.adj_matrix
+        n = len(matrix)
+        for i in range(n):
+            for j in range(i + 1, n):
+                if matrix[i][j] != matrix[j][i]:
+                    return True
+        return False
+
+    def _is_directed_by_lists(self):
+        """
+        Определяет, является ли граф ориентированным по его спискам смежности
+        :return: статус ориентированности графа
+        """
+
+        lists = self.adj_lists
+        all_edges = set()  # Создание множества всех ребер
+        for vertex, neighbors in lists.items():
+            for neighbor in neighbors:
+                all_edges.add((vertex, neighbor))
+
+        # Проверка наличия обратных ребер
+        for u, v in all_edges:
+            if (v, u) not in all_edges:
+                return True
+        return False
+
+    # ДРУГОЕ
     def _adj_matrix_to_adj_lists(self):
         self.adj_lists = {i: [] for i in range(self.num_vertices)}
         for i in range(self.num_vertices):

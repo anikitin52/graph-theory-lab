@@ -4,42 +4,54 @@ from graph_input import input_adj_lists
 
 class Graph:
     def __init__(self, num_vertices):
+        if not isinstance(num_vertices, int):
+            raise TypeError(
+                'Количество вершин должно быть целым числом.'
+            )
+        if num_vertices < 0:
+            raise ValueError(
+                'Количество вершин не может быть отрицательным.'
+            )
         self._num_vertices = num_vertices
-
         self._num_edges = 0
         self._directed = False
-        self._adj_matrix = [[0] * self._num_vertices for _ in range(self._num_vertices)]
-        self._adj_lists = {i: [] for i in range(self._num_vertices)}
+        self._adj_matrix = [[0] * self._num_vertices
+                            for _ in range(self._num_vertices)]
+        self._adj_lists = {
+            i: [] for i in range(self._num_vertices)
+        }
 
     # ВВОД ДАННЫХ
     def set_adj_matrix(self):
         """
         Задание графа матрицей смежности
-        :return:
+        :return: None
         """
-        self._adj_matrix = input_adj_matrix(self._num_vertices)  # Матрица смежности
-        self._directed = self._is_directed_by_matrix()  # Ориентированность графа
-        self._num_edges = self._count_edges_from_matrix()  # Количество ребер
-        self._adj_matrix_to_adj_lists()  # Перевод в списки смежности
+        self._adj_matrix = input_adj_matrix(self._num_vertices)
+        self._directed = self._is_directed_by_matrix()
+        self._num_edges = self._count_edges_from_matrix()
+        self._adj_matrix_to_adj_lists()
 
     def set_adj_list(self):
         """
         Задание графа списками смежности
-        :return:
+        :return: None
         """
-        self._adj_lists = input_adj_lists(self._num_vertices)  # Списки смежности
-        self._directed = self._is_directed_by_lists()  # Ориентированность графа
-        self._num_edges = self._count_edges_from_lists()  # Количество ребер
-        self._adj_lists_to_adj_matrix()  # Перевод в матрицу смежности
+        self._adj_lists = input_adj_lists(self._num_vertices)
+        self._directed = self._is_directed_by_lists()
+        self._num_edges = self._count_edges_from_lists()
+        self._adj_lists_to_adj_matrix()
 
     # КЛАССИФИКАЦИЯ ГРАФА
     def _is_directed_by_matrix(self):
         """
-        Определяет, является ли граф ориентированным по его матрице смежности
+        Определяет, является ли граф ориентированным
+        по его матрице смежности
         :return: статус ориентированности графа
         """
         matrix = self._adj_matrix
         n = len(matrix)
+
         for i in range(n):
             for j in range(i + 1, n):
                 if matrix[i][j] != matrix[j][i]:
@@ -48,19 +60,21 @@ class Graph:
 
     def _is_directed_by_lists(self):
         """
-        Определяет, является ли граф ориентированным по его спискам смежности
+        Определяет, является ли граф ориентированным
+        по его спискам смежности
         :return: статус ориентированности графа
         """
         lists = self._adj_lists
-        all_edges = set()  # Создание множества всех ребер
+        all_edges = set()
+
         for vertex, neighbors in lists.items():
             for neighbor in neighbors:
                 all_edges.add((vertex, neighbor))
 
-        # Проверка наличия обратных ребер
         for u, v in all_edges:
             if (v, u) not in all_edges:
                 return True
+
         return False
 
     def _count_edges_from_matrix(self):
@@ -73,14 +87,16 @@ class Graph:
         edges = 0
 
         if self._directed:
-            # Граф ориентированный. Считаем все ненулевые элементы
+            # Граф ориентированный. Считаем все ненулевые элементы.
             for i in range(n):
                 for j in range(n):
                     if matrix[i][j] != 0:
                         edges += 1
             return edges
+
         else:
-            # Граф неориентированный. Считаем только верхний треугольник
+            # Граф неориентированный.
+            # Диагональ учитывается, так как петли разрешены.
             for i in range(n):
                 for j in range(i, n):
                     if matrix[i][j] != 0:
@@ -93,13 +109,19 @@ class Graph:
         :return: количество ребер в графе
         """
         if self._directed:
-            return sum(len(neighbors) for neighbors in self._adj_lists.values())
+            return sum(
+                len(neighbors)
+                for neighbors in self._adj_lists.values()
+            )
+
         else:
             edges = set()
-
             for vertex, neighbors in self._adj_lists.items():
                 for neighbor in neighbors:
-                    edge = (min(vertex, neighbor), max(vertex, neighbor))
+                    edge = (
+                        min(vertex, neighbor),
+                        max(vertex, neighbor)
+                    )
                     edges.add(edge)
             return len(edges)
 
@@ -109,7 +131,10 @@ class Graph:
         Преобразование из матрицы смежности в списки смежности
         :return: None
         """
-        self._adj_lists = {i: [] for i in range(self._num_vertices)}
+        self._adj_lists = {
+            i: [] for i in range(self._num_vertices)
+        }
+
         for i in range(self._num_vertices):
             for j in range(self._num_vertices):
                 if self._adj_matrix[i][j] != 0:
@@ -120,10 +145,15 @@ class Graph:
         Преобразование из списков смежности в матрицу смежности
         :return: None
         """
-        self._adj_matrix = [[0] * self._num_vertices for _ in range(self._num_vertices)]
+        self._adj_matrix = [
+            [0] * self._num_vertices
+            for _ in range(self._num_vertices)
+        ]
+
         for vertex, neighbours in self._adj_lists.items():
             for neighbour in neighbours:
                 self._adj_matrix[vertex][neighbour] = 1
+
                 if not self._directed:
                     self._adj_matrix[neighbour][vertex] = 1
 
@@ -133,10 +163,11 @@ class Graph:
         :return: Строковое описание графа
         """
         result = f''' Граф
-            Вершин: {self._num_vertices} 
+            Вершин: {self._num_vertices}
             Ребер: {self._num_edges}
-            {'ориентированный' if self._directed else 'неориeнтированный'} 
+            {'ориентированный' if self._directed else 'неориентированный'}
             '''
+
         result += "\nМатрица смежности \n"
         for row in self._adj_matrix:
             result += ' '.join(map(str, row)) + '\n'
@@ -144,85 +175,172 @@ class Graph:
         result += "Списки смежности: \n"
         for vertex in sorted(self._adj_lists.keys()):
             # Преобразуем обратно к 1-based для отображения
-            neighbors_1based = [x + 1 for x in self._adj_lists[vertex]]
+            neighbors_1based = [
+                x + 1 for x in self._adj_lists[vertex]
+            ]
             result += f'{vertex + 1}: {neighbors_1based}\n'
 
         return result
 
-    # ДРУГОЕ
-
-
-'''
+    # ЭЙЛЕРОВ ЦИКЛ
     def _is_eulerian(self):
-        if self.directed:
-            out_degree = [len(self.adj_lists[i]) for i in range(self.num_vertices)]
-            in_degree = [0] * self.num_vertices
-            for i in range(self.num_vertices):
-                for neighbor in self.adj_lists[i]:
+        """
+        Проверка наличия эйлерова цикла в графе
+        :return: True, если эйлеров цикл существует, иначе False
+        """
+
+        if self._num_vertices == 0:
+            return False
+        if self._directed:
+            out_degree = [
+                len(self._adj_lists[i])
+                for i in range(self._num_vertices)
+            ]
+            in_degree = [0] * self._num_vertices
+            for i in range(self._num_vertices):
+                for neighbor in self._adj_lists[i]:
                     in_degree[neighbor] += 1
-            return all(out_degree[i] == in_degree[i] for i in range(self.num_vertices))
+            # Условие равенства входящих и исходящих степеней
+            if not all(
+                out_degree[i] == in_degree[i]
+                for i in range(self._num_vertices)
+            ):
+                return False
+
         else:
-            # Для неориентированного графа: каждая петля добавляет 2 к степени
-            degrees = [0] * self.num_vertices
-            for i in range(self.num_vertices):
-                for neighbor in self.adj_lists[i]:
-                    if neighbor == i:  # Петля
-                        degrees[i] += 2
+            # Проверка чётности степеней
+            for i in range(self._num_vertices):
+                degree = 0
+                for neighbor in self._adj_lists[i]:
+                    if neighbor == i:
+                        degree += 2
                     else:
-                        degrees[i] += 1
-            return all(degree % 2 == 0 for degree in degrees)
+                        degree += 1
+
+                if degree % 2 != 0:
+                    return False
+
+        # Поиск первой вершины, имеющей хотя бы одно ребро
+        start = None
+        for i in range(self._num_vertices):
+            if len(self._adj_lists[i]) > 0:
+                start = i
+                break
+        # Если рёбер нет
+        if start is None:
+            return True
+        # Проверка связности вершин, участвующих в рёбрах
+        visited = set()
+        stack = [start]
+
+        while stack:
+            vertex = stack.pop()
+            if vertex in visited:
+                continue
+            visited.add(vertex)
+
+            # Для ориентированного графа рассматриваем
+            # рёбра как неориентированные
+            for neighbor in self._adj_lists[vertex]:
+                if neighbor not in visited:
+                    stack.append(neighbor)
+
+            if self._directed:
+                for vertex2 in range(self._num_vertices):
+                    if (
+                        vertex in self._adj_lists[vertex2]
+                        and vertex2 not in visited
+                    ):
+                        stack.append(vertex2)
+
+        # Все вершины, имеющие рёбра, должны быть посещены
+        for i in range(self._num_vertices):
+            if (
+                len(self._adj_lists[i]) > 0
+                or any(
+                    i in self._adj_lists[j]
+                    for j in range(self._num_vertices)
+                )
+            ):
+                if i not in visited:
+                    return False
+
+        return True
 
     def find_eulerian_cycle(self):
+        """
+        Поиск эйлерова цикла алгоритмом на двух стеках.
+        :return: список вершин эйлерова цикла или None
+        """
+
         if not self._is_eulerian():
             print('No Eulerian cycle')
             return None
 
-        # Создаем копию структуры графа
+        # Копия списков смежности
         adj_list_copy = {}
-        for v in range(self.num_vertices):
-            adj_list_copy[v] = self.adj_lists[v][:]  # Всегда используем списки
+        for v in range(self._num_vertices):
+            adj_list_copy[v] = self._adj_lists[v][:]
 
+        # Первый стек — текущий путь
         stack = []
-        cycle = []
-
+        # Второй стек — найденный цикл
+        cycle_stack = []
         # Выбор стартовой вершины
         start_vertex = 0
-        for i in range(self.num_vertices):
+
+        for i in range(self._num_vertices):
             if adj_list_copy[i]:
                 start_vertex = i
                 break
+        stack.append(start_vertex)
 
-        current_vertex = start_vertex
+        while stack:
+            current_vertex = stack[-1]
 
-        while True:
-            # Если есть ребра из текущей вершины
+            # Если есть неиспользованные рёбра
             if adj_list_copy[current_vertex]:
-                stack.append(current_vertex)
                 next_vertex = adj_list_copy[current_vertex].pop()
 
-                # Удаляем обратное ребро для неориентированного графа
-                if not self.directed and current_vertex != next_vertex:
-                    # Находим и удаляем обратное ребро
+                # Для неориентированного графа удаляем
+                # обратное представление ребра
+                if (
+                    not self._directed
+                    and current_vertex != next_vertex
+                ):
                     if current_vertex in adj_list_copy[next_vertex]:
-                        idx = adj_list_copy[next_vertex].index(current_vertex)
-                        del adj_list_copy[next_vertex][idx]
+                        index = adj_list_copy[next_vertex].index(
+                            current_vertex
+                        )
+                        del adj_list_copy[next_vertex][index]
 
-                current_vertex = next_vertex
+                # Добавляем следующую вершину
+                # в первый стек
+                stack.append(next_vertex)
             else:
-                # Нет исходящих ребер
-                cycle.append(current_vertex)
-                if not stack:
-                    break
-                current_vertex = stack.pop()
+                # Из вершины больше нельзя идти —
+                # переносим её во второй стек
+                cycle_stack.append(stack.pop())
+        # Извлекаем цикл из второго стека
+        cycle = []
+        while cycle_stack:
+            cycle.append(cycle_stack.pop())
 
-        cycle.reverse()
-
-        # Проверяем что цикл корректен
-        if len(cycle) == self.num_edges + 1:
+        # Проверка корректности найденного цикла
+        if len(cycle) == self._num_edges + 1:
             return cycle
-        else:
-            print(f"Найден некорректный цикл длиной {len(cycle)} (ожидалось {self.num_edges + 1})")
-            return None
+
+        print(
+            f'Найден некорректный цикл длиной {len(cycle)} '
+            f'(ожидалось {self._num_edges + 1})'
+        )
+
+        return None
+
+'''
+    
+
+   
 
     def find_hamiltonian_cycle(self):
         """

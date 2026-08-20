@@ -15,11 +15,9 @@ class Graph:
         self._num_vertices = num_vertices
         self._num_edges = 0
         self._directed = False
-        self._adj_matrix = [[0] * self._num_vertices
-                            for _ in range(self._num_vertices)]
-        self._adj_lists = {
-            i: [] for i in range(self._num_vertices)
-        }
+        self._is_tournament = False
+        self._adj_matrix = [[0] * self._num_vertices for _ in range(self._num_vertices)]
+        self._adj_lists = {i: [] for i in range(self._num_vertices)}
 
     # ВВОД ДАННЫХ
     def set_adj_matrix(self):
@@ -30,6 +28,7 @@ class Graph:
         self._adj_matrix = input_adj_matrix(self._num_vertices)
         self._directed = self._is_directed_by_matrix()
         self._num_edges = self._count_edges_from_matrix()
+        self._is_tournament = self.is_tournament()
         self._adj_matrix_to_adj_lists()
 
     def set_adj_list(self):
@@ -40,6 +39,7 @@ class Graph:
         self._adj_lists = input_adj_lists(self._num_vertices)
         self._directed = self._is_directed_by_lists()
         self._num_edges = self._count_edges_from_lists()
+        self._is_tournament = self.is_tournament()
         self._adj_lists_to_adj_matrix()
 
     # КЛАССИФИКАЦИЯ ГРАФА
@@ -125,6 +125,22 @@ class Graph:
                     edges.add(edge)
             return len(edges)
 
+    def is_tournament(self):
+        """
+        Проверка, является ли граф турниром
+        :return: True, если граф - турнир, иначе False
+        """
+        if not self._directed:
+            return False
+        n = self._num_vertices
+        for i in range(n):
+            for j in range(i + 1, n):
+                ij = self._adj_matrix[i][j] == 1
+                ji = self._adj_matrix[j][i] == 1
+                if ij == ji:  # либо оба 0, либо оба 1 – не турнир
+                    return False
+        return True
+
     # ПРЕОБРАЗОВАНИЯ
     def _adj_matrix_to_adj_lists(self):
         """
@@ -191,6 +207,8 @@ class Graph:
 
         if self._num_vertices == 0:
             return False
+
+        # Проверка степеней
         if self._directed:
             out_degree = [
                 len(self._adj_lists[i])
@@ -202,11 +220,10 @@ class Graph:
                     in_degree[neighbor] += 1
             # Условие равенства входящих и исходящих степеней
             if not all(
-                out_degree[i] == in_degree[i]
-                for i in range(self._num_vertices)
+                    out_degree[i] == in_degree[i]
+                    for i in range(self._num_vertices)
             ):
                 return False
-
         else:
             # Проверка чётности степеней
             for i in range(self._num_vertices):
@@ -226,10 +243,12 @@ class Graph:
             if len(self._adj_lists[i]) > 0:
                 start = i
                 break
+
         # Если рёбер нет
         if start is None:
             return True
-        # Проверка связности вершин, участвующих в рёбрах
+
+        # Проверка связности (слабой связности для ориентированного графа)
         visited = set()
         stack = [start]
 
@@ -239,31 +258,27 @@ class Graph:
                 continue
             visited.add(vertex)
 
-            # Для ориентированного графа рассматриваем
-            # рёбра как неориентированные
+            # Добавляем всех соседей (для неориентированного графа)
             for neighbor in self._adj_lists[vertex]:
                 if neighbor not in visited:
                     stack.append(neighbor)
 
+            # Для ориентированного графа добавляем также вершины,
+            # которые имеют ребро к текущей вершине (обратные ребра)
             if self._directed:
                 for vertex2 in range(self._num_vertices):
-                    if (
-                        vertex in self._adj_lists[vertex2]
-                        and vertex2 not in visited
-                    ):
+                    if vertex in self._adj_lists[vertex2] and vertex2 not in visited:
                         stack.append(vertex2)
 
         # Все вершины, имеющие рёбра, должны быть посещены
         for i in range(self._num_vertices):
-            if (
-                len(self._adj_lists[i]) > 0
-                or any(
-                    i in self._adj_lists[j]
-                    for j in range(self._num_vertices)
-                )
-            ):
-                if i not in visited:
-                    return False
+            has_edges = len(self._adj_lists[i]) > 0
+            if not has_edges:
+                # Проверяем входящие ребра для ориентированного графа
+                if self._directed:
+                    has_edges = any(i in self._adj_lists[j] for j in range(self._num_vertices))
+            if has_edges and i not in visited:
+                return False
 
         return True
 
@@ -305,8 +320,8 @@ class Graph:
                 # Для неориентированного графа удаляем
                 # обратное представление ребра
                 if (
-                    not self._directed
-                    and current_vertex != next_vertex
+                        not self._directed
+                        and current_vertex != next_vertex
                 ):
                     if current_vertex in adj_list_copy[next_vertex]:
                         index = adj_list_copy[next_vertex].index(
@@ -337,35 +352,33 @@ class Graph:
 
         return None
 
-'''
-    
-
-   
-
+    # ГАМИЛЬТОНОВ ЦИКЛ И ПУТЬ
     def find_hamiltonian_cycle(self):
         """
-        Возвращает гамильтонов цикл как список вершин (длиной num_vertices+1,
-        где последняя совпадает с первой), или None, если цикла нет.
+        Поиск гамильтонова цикла в графе
+        :return: список вершин гамильтонова цикла или None, если цикла нет
         """
-        if self.num_vertices < 3:
+        if self._num_vertices < 3:
             print('No Hamiltonian cycle')
             return None
 
+        if self._is_tournament:
+            return self.find_hamiltonian_cycle_tournament()
         # Начинаем с вершины 0, можно выбрать любую
         start = 0
         path = [start]
-        visited = [False] * self.num_vertices
+        visited = [False] * self._num_vertices
         visited[start] = True
 
         # Рекурсивный backtracking
         def backtrack(v):
-            if len(path) == self.num_vertices:
+            if len(path) == self._num_vertices:
                 # Проверяем, есть ли ребро из последней вершины в стартовую
-                if start in self.adj_lists[path[-1]]:
+                if start in self._adj_lists[path[-1]]:
                     return True
                 return False
 
-            for neighbour in self.adj_lists[v]:
+            for neighbour in self._adj_lists[v]:
                 if not visited[neighbour]:
                     visited[neighbour] = True
                     path.append(neighbour)
@@ -386,23 +399,22 @@ class Graph:
 
     def find_hamiltonian_path(self):
         """
-        Поиск гамильтонова пути в обыкновенном графе.
-        Возвращает список вершин пути (длиной num_vertices) или None,
-        если путь не существует.
+        Поиск гамильтонова пусти в графе
+        :return: список вершин гамильтонова пути в графе или None, если пути нет
         """
-        if self.num_vertices == 0:
+        if self._num_vertices == 0:
             return None
 
         # Пробуем каждую вершину в качестве начальной
-        for start in range(self.num_vertices):
+        for start in range(self._num_vertices):
             path = [start]
-            visited = [False] * self.num_vertices
+            visited = [False] * self._num_vertices
             visited[start] = True
 
             def backtrack(v):
-                if len(path) == self.num_vertices:
+                if len(path) == self._num_vertices:
                     return True
-                for neighbour in self.adj_lists[v]:
+                for neighbour in self._adj_lists[v]:
                     if not visited[neighbour]:
                         visited[neighbour] = True
                         path.append(neighbour)
@@ -417,28 +429,14 @@ class Graph:
 
         return None
 
-    def is_tournament(self):
-        """Проверяет, является ли ориентированный граф турниром."""
-        if not self.directed:
-            return False
-        n = self.num_vertices
-        for i in range(n):
-            for j in range(i + 1, n):
-                ij = self.adj_matrix[i][j] == 1
-                ji = self.adj_matrix[j][i] == 1
-                if ij == ji:  # либо оба 0, либо оба 1 – не турнир
-                    return False
-        return True
-
     def find_hamiltonian_cycle_tournament(self):
         """
-        Поиск гамильтонова цикла в турнире.
-        Возвращает список вершин цикла (длина num_vertices + 1, конец совпадает с началом)
-        или None, если цикла нет (граф не сильно связный).
+        Поиск гамильтонова цикла в турнире
+        :return: список вершин гамильтонова цикла, если он есть, иначе None
         """
         if not self.is_tournament():
             return None
-        n = self.num_vertices
+        n = self._num_vertices
         if n == 0:
             return None
 
@@ -446,26 +444,26 @@ class Graph:
         path = [0]
         for v in range(1, n):
             # вставка v в путь
-            if self.adj_matrix[v][path[0]] == 1:
+            if self._adj_matrix[v][path[0]] == 1:
                 path.insert(0, v)
-            elif self.adj_matrix[path[-1]][v] == 1:
+            elif self._adj_matrix[path[-1]][v] == 1:
                 path.append(v)
             else:
                 for i in range(len(path) - 1):
-                    if self.adj_matrix[path[i]][v] == 1 and self.adj_matrix[v][path[i + 1]] == 1:
+                    if self._adj_matrix[path[i]][v] == 1 and self._adj_matrix[v][path[i + 1]] == 1:
                         path.insert(i + 1, v)
                         break
 
         # 2. Пытаемся замкнуть путь в цикл
-        if self.adj_matrix[path[-1]][path[0]] == 1:
+        if self._adj_matrix[path[-1]][path[0]] == 1:
             return path + [path[0]]
 
-        # Ищем k (2 ≤ k ≤ n-1 в 1-индексации) такое, что
-        # есть рёбра path[k-1] → path[0] и path[k-2] → path[-1]
-        for k in range(2, n):  # k = 2..n-1 (позиции с 1), индекс в path = k-1
-            if self.adj_matrix[path[k - 1]][path[0]] == 1 and self.adj_matrix[path[k - 2]][path[-1]] == 1:
-                cycle = [path[0]] + path[k - 1:] + path[1:k - 1] + [path[0]]
+        # Ищем i (1 ≤ i ≤ n-1) такое, что есть ребра path[i] -> path[0] и path[i-1] -> path[-1]
+        # В терминах индексов массива: ищем i от 1 до n-1
+        for i in range(1, n):
+            if self._adj_matrix[path[i]][path[0]] == 1 and self._adj_matrix[path[i - 1]][path[-1]] == 1:
+                # Строим цикл: path[0], path[i], path[i+1], ..., path[n-1], path[1], path[2], ..., path[i-1], path[0]
+                cycle = [path[0]] + path[i:] + path[1:i] + [path[0]]
                 return cycle
 
         return None  # турнир не сильно связен, гамильтонова цикла нет
-'''

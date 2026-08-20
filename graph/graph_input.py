@@ -1,104 +1,56 @@
-from graph import Graph
+def input_adj_matrix(num_vertices):
+    """
+    Задание графа с помощью матрицы смежности
+    :param num_vertices: количество вершин в графе
+    :return: Матрица смежности (список списков)
+    """
 
-vertices = None
-graph = None
+    print("Введите матрицу смежности")
+    adj_matrix = []  # Инициализация матрицы
 
-while True:
-    if vertices is None:
-        while True:
-            try:
-                print("Граф не задан, введите количество вершин")
-                vertices = int(input())
-                if vertices < 0:
-                    print("Ошибка: количество вершин не может быть отрицательным!")
-                    continue
-                graph = Graph(vertices)
-                print(f"Граф с {vertices} вершинами создан!")
-                break
-            except ValueError:
-                print("Ошибка: введите целое число!")
-            except Exception as e:
-                print(f"Ошибка: {e}")
-
-        continue
-
-    print(''' Главное меню:
-    1. Ввести матрицу смежности графа
-    2. Ввести списки смежности
-    3. Показать информацию о графе 
-    4. Найти эйлеров цикл 
-    5. Найти гамильтонов цикл
-    6. Найти гамильтонов путь
-    7. Выход
-    ''')
-
-    choice = input("Выберите действие: ").strip()
-
-    if choice == '1':
+    # Заполнение матрицы
+    for i in range(num_vertices):
         try:
-            graph.set_adj_matrix()
-            print("Матрица смежности успешно введена!")
-        except ValueError as e:
-            print(f"Ошибка ввода матрицы смежности: {e}")
-        except Exception as e:
-            print(f"Неожиданная ошибка: {e}")
+            row = list(map(int, input().split()))
+        except ValueError:
+            raise ValueError(
+                f'Ошибка ввода в строке {i + 1}: все значения должны быть целыми числами. '
+            )
+        if len(row) != num_vertices:
+            raise ValueError(
+                f'Ошибка ввода матрицы смежности: '
+                f'ожидалось {num_vertices} элементов, получено {len(row)}'
+            )
+        adj_matrix.append(row)
 
-    elif choice == '2':
+    return adj_matrix
+
+
+def input_adj_lists(num_vertices):
+    """
+    Задание графа с помощью списков смежности
+    :param num_vertices: количество вершин в графе
+    :return: списки смежности
+    """
+
+    print("Введите списки смежности")
+    adj_list = {}  # Инициализация словаря {номер вершины: список вершин}
+
+    for i in range(num_vertices):
         try:
-            graph.set_adj_list()
-            print("Списки смежности успешно введены!")
-        except ValueError as e:
-            print(f"Ошибка ввода списков смежности: {e}")
-        except Exception as e:
-            print(f"Неожиданная ошибка: {e}")
+            neighbours = list(
+                map(int, input(f'Вершина {i + 1}: ').split()))  # Показываем пользователю вершины с 1, но храним с 0
+        except ValueError:
+            raise ValueError(
+                f'Ошибка ввода в строке {i + 1}: все значения должны быть целыми числами. '
+            )
+        for x in neighbours:
+            if not 1 <= x <= num_vertices:
+                raise ValueError(
+                    f'Ошибка ввода в строке {i+1}: вершины {x} не существует'
+                )
 
-    elif choice == '3':
-        try:
-            print(graph)
-        except Exception as e:
-            print(f"Ошибка при выводе информации о графе: {e}")
+        neighbours = [x - 1 for x in neighbours]  # Преобразуем в 0-based индексы
+        adj_list[i] = neighbours
 
-    elif choice == '4':
-        try:
-            result = graph.find_eulerian_cycle()
-            if result:
-                # Преобразуем в 1-based для вывода
-                result_1based = [x + 1 for x in result]
-                print(f"Эйлеров цикл: {result_1based}")
-            else:
-                print("Эйлеров цикл не найден")
-        except Exception as e:
-            print(f"Ошибка при поиске эйлерова цикла: {e}")
-
-    elif choice == '5':
-        try:
-            result = graph.find_hamiltonian_cycle()
-            if result:
-                # Преобразуем в 1-based для вывода
-                result_1based = [x + 1 for x in result]
-                print(f"Гамильтонов цикл: {result_1based}")
-            else:
-                print("Гамильтонов цикл не найден")
-        except Exception as e:
-            print(f"Ошибка при поиске гамильтонова цикла: {e}")
-
-    elif choice == '6':
-        try:
-            result = graph.find_hamiltonian_path()
-            if result:
-                # Преобразуем в 1-based для вывода
-                result_1based = [x + 1 for x in result]
-                print(f"Гамильтонов путь: {result_1based}")
-            else:
-                print("Гамильтонов путь не найден")
-        except Exception as e:
-            print(f"Ошибка при поиске гамильтонова пути: {e}")
-
-    elif choice == '7':
-        print("Выход из программы ...")
-        break
-
-    else:
-        print("Ошибка ввода! Выберите действие от 1 до 7.")
-
-print("Программа завершена.")
+    return adj_list

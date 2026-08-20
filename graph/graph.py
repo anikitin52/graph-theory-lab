@@ -1,5 +1,5 @@
-from graph_input import input_adj_matrix
-from graph_input import input_adj_lists
+from graph.graph_input import input_adj_matrix
+from graph.graph_input import input_adj_lists
 
 
 class Graph:

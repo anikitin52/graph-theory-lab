@@ -1,10 +1,10 @@
-from graph.graph_input import input_adj_matrix
-from graph.graph_input import input_adj_lists
+from .graph_input import input_adj_matrix
+from .graph_input import input_adj_lists
 
 
 class Graph:
     def __init__(self, num_vertices):
-        if not isinstance(num_vertices, int):
+        if type(num_vertices) is not int:
             raise TypeError(
                 'Количество вершин должно быть целым числом.'
             )
@@ -93,13 +93,13 @@ class Graph:
                     if matrix[i][j] != 0:
                         edges += 1
             return edges
-
         else:
             # Граф неориентированный.
-            # Диагональ учитывается, так как петли разрешены.
             for i in range(n):
                 for j in range(i, n):
                     if matrix[i][j] != 0:
+                        edges += 1
+                    elif i != j and matrix[j][i] != 0:
                         edges += 1
             return edges
 
@@ -109,21 +109,14 @@ class Graph:
         :return: количество ребер в графе
         """
         if self._directed:
-            return sum(
-                len(neighbors)
-                for neighbors in self._adj_lists.values()
-            )
-
+            return sum(len(neighbors) for neighbors in self._adj_lists.values())
         else:
-            edges = set()
+            edges = 0
             for vertex, neighbors in self._adj_lists.items():
                 for neighbor in neighbors:
-                    edge = (
-                        min(vertex, neighbor),
-                        max(vertex, neighbor)
-                    )
-                    edges.add(edge)
-            return len(edges)
+                    if vertex <= neighbor:
+                        edges += 1
+            return edges
 
     def is_tournament(self):
         """
@@ -169,7 +162,6 @@ class Graph:
         for vertex, neighbours in self._adj_lists.items():
             for neighbour in neighbours:
                 self._adj_matrix[vertex][neighbour] = 1
-
                 if not self._directed:
                     self._adj_matrix[neighbour][vertex] = 1
 
@@ -190,7 +182,6 @@ class Graph:
 
         result += "Списки смежности: \n"
         for vertex in sorted(self._adj_lists.keys()):
-            # Преобразуем обратно к 1-based для отображения
             neighbors_1based = [
                 x + 1 for x in self._adj_lists[vertex]
             ]
@@ -218,7 +209,6 @@ class Graph:
             for i in range(self._num_vertices):
                 for neighbor in self._adj_lists[i]:
                     in_degree[neighbor] += 1
-            # Условие равенства входящих и исходящих степеней
             if not all(
                     out_degree[i] == in_degree[i]
                     for i in range(self._num_vertices)
@@ -244,7 +234,6 @@ class Graph:
                 start = i
                 break
 
-        # Если рёбер нет
         if start is None:
             return True
 
@@ -258,23 +247,18 @@ class Graph:
                 continue
             visited.add(vertex)
 
-            # Добавляем всех соседей (для неориентированного графа)
             for neighbor in self._adj_lists[vertex]:
                 if neighbor not in visited:
                     stack.append(neighbor)
 
-            # Для ориентированного графа добавляем также вершины,
-            # которые имеют ребро к текущей вершине (обратные ребра)
             if self._directed:
                 for vertex2 in range(self._num_vertices):
                     if vertex in self._adj_lists[vertex2] and vertex2 not in visited:
                         stack.append(vertex2)
 
-        # Все вершины, имеющие рёбра, должны быть посещены
         for i in range(self._num_vertices):
             has_edges = len(self._adj_lists[i]) > 0
             if not has_edges:
-                # Проверяем входящие ребра для ориентированного графа
                 if self._directed:
                     has_edges = any(i in self._adj_lists[j] for j in range(self._num_vertices))
             if has_edges and i not in visited:
@@ -292,16 +276,12 @@ class Graph:
             print('No Eulerian cycle')
             return None
 
-        # Копия списков смежности
         adj_list_copy = {}
         for v in range(self._num_vertices):
             adj_list_copy[v] = self._adj_lists[v][:]
 
-        # Первый стек — текущий путь
         stack = []
-        # Второй стек — найденный цикл
         cycle_stack = []
-        # Выбор стартовой вершины
         start_vertex = 0
 
         for i in range(self._num_vertices):
@@ -313,12 +293,9 @@ class Graph:
         while stack:
             current_vertex = stack[-1]
 
-            # Если есть неиспользованные рёбра
             if adj_list_copy[current_vertex]:
                 next_vertex = adj_list_copy[current_vertex].pop()
 
-                # Для неориентированного графа удаляем
-                # обратное представление ребра
                 if (
                         not self._directed
                         and current_vertex != next_vertex
@@ -329,21 +306,15 @@ class Graph:
                         )
                         del adj_list_copy[next_vertex][index]
 
-                # Добавляем следующую вершину
-                # в первый стек
                 stack.append(next_vertex)
             else:
-                # Из вершины больше нельзя идти —
-                # переносим её во второй стек
                 cycle_stack.append(stack.pop())
-        # Извлекаем цикл из второго стека
+
         cycle = []
         while cycle_stack:
             cycle.append(cycle_stack.pop())
 
-        # Проверка корректности найденного цикла
         if len(cycle) == self._num_edges + 1:
-            # Преобразуем в 1-based для вывода
             return [x + 1 for x in cycle]
 
         print(
@@ -366,16 +337,13 @@ class Graph:
         if self._is_tournament:
             return self.find_hamiltonian_cycle_tournament()
 
-        # Начинаем с вершины 0, можно выбрать любую
         start = 0
         path = [start]
         visited = [False] * self._num_vertices
         visited[start] = True
 
-        # Рекурсивный backtracking
         def backtrack(v):
             if len(path) == self._num_vertices:
-                # Проверяем, есть ли ребро из последней вершины в стартовую
                 if start in self._adj_lists[path[-1]]:
                     return True
                 return False
@@ -386,15 +354,12 @@ class Graph:
                     path.append(neighbour)
                     if backtrack(neighbour):
                         return True
-                    # Откат
                     visited[neighbour] = False
                     path.pop()
             return False
 
         if backtrack(start):
-            # Формируем цикл с возвратом в начальную вершину
             cycle = path + [start]
-            # Преобразуем в 1-based для вывода
             return [x + 1 for x in cycle]
         else:
             print('No Hamiltonian cycle')
@@ -408,7 +373,6 @@ class Graph:
         if self._num_vertices == 0:
             return None
 
-        # Пробуем каждую вершину в качестве начальной
         for start in range(self._num_vertices):
             path = [start]
             visited = [False] * self._num_vertices
@@ -428,7 +392,6 @@ class Graph:
                 return False
 
             if backtrack(start):
-                # Преобразуем в 1-based для вывода
                 return [x + 1 for x in path]
 
         return None
@@ -444,10 +407,8 @@ class Graph:
         if n == 0:
             return None
 
-        # 1. Строим гамильтонов путь методом вставки
         path = [0]
         for v in range(1, n):
-            # вставка v в путь
             if self._adj_matrix[v][path[0]] == 1:
                 path.insert(0, v)
             elif self._adj_matrix[path[-1]][v] == 1:
@@ -458,19 +419,13 @@ class Graph:
                         path.insert(i + 1, v)
                         break
 
-        # 2. Пытаемся замкнуть путь в цикл
         if self._adj_matrix[path[-1]][path[0]] == 1:
             cycle = path + [path[0]]
-            # Преобразуем в 1-based для вывода
             return [x + 1 for x in cycle]
 
-        # Ищем i (1 ≤ i ≤ n-1) такое, что есть ребра path[i] -> path[0] и path[i-1] -> path[-1]
-        # В терминах индексов массива: ищем i от 1 до n-1
         for i in range(1, n):
             if self._adj_matrix[path[i]][path[0]] == 1 and self._adj_matrix[path[i - 1]][path[-1]] == 1:
-                # Строим цикл: path[0], path[i], path[i+1], ..., path[n-1], path[1], path[2], ..., path[i-1], path[0]
                 cycle = [path[0]] + path[i:] + path[1:i] + [path[0]]
-                # Преобразуем в 1-based для вывода
                 return [x + 1 for x in cycle]
 
-        return None  # турнир не сильно связен, гамильтонова цикла нет
+        return None

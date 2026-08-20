@@ -4,7 +4,7 @@ from unittest.mock import patch
 from graph.graph_input import input_adj_matrix, input_adj_lists
 
 
-class TestePerformanceInput:
+class TestPerformanceInput:
     """Тестирование производительности ввода данных"""
 
     def test_perf_matrix_1000(self):

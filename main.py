@@ -1,6 +1,6 @@
 from graph.graph import Graph
 
-print("=== ЛАБОРАТОРНАЯ РАБОТА 1: ТЕОРИЯ ГРАФОВ === \n")
+print("=== НАУЧНАЯ РАБОТА ПО ТЕОРИИ ГРАФОВ === \n")
 
 vertices = None
 graph = None

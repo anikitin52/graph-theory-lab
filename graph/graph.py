@@ -285,7 +285,7 @@ class Graph:
     def find_eulerian_cycle(self):
         """
         Поиск эйлерова цикла алгоритмом на двух стеках.
-        :return: список вершин эйлерова цикла или None
+        :return: список вершин эйлерова цикла в 1-based или None
         """
 
         if not self._is_eulerian():
@@ -343,7 +343,8 @@ class Graph:
 
         # Проверка корректности найденного цикла
         if len(cycle) == self._num_edges + 1:
-            return cycle
+            # Преобразуем в 1-based для вывода
+            return [x + 1 for x in cycle]
 
         print(
             f'Найден некорректный цикл длиной {len(cycle)} '
@@ -356,7 +357,7 @@ class Graph:
     def find_hamiltonian_cycle(self):
         """
         Поиск гамильтонова цикла в графе
-        :return: список вершин гамильтонова цикла или None, если цикла нет
+        :return: список вершин гамильтонова цикла в 1-based или None, если цикла нет
         """
         if self._num_vertices < 3:
             print('No Hamiltonian cycle')
@@ -364,6 +365,7 @@ class Graph:
 
         if self._is_tournament:
             return self.find_hamiltonian_cycle_tournament()
+
         # Начинаем с вершины 0, можно выбрать любую
         start = 0
         path = [start]
@@ -392,15 +394,16 @@ class Graph:
         if backtrack(start):
             # Формируем цикл с возвратом в начальную вершину
             cycle = path + [start]
-            return cycle
+            # Преобразуем в 1-based для вывода
+            return [x + 1 for x in cycle]
         else:
             print('No Hamiltonian cycle')
             return None
 
     def find_hamiltonian_path(self):
         """
-        Поиск гамильтонова пусти в графе
-        :return: список вершин гамильтонова пути в графе или None, если пути нет
+        Поиск гамильтонова пути в графе
+        :return: список вершин гамильтонова пути в 1-based или None, если пути нет
         """
         if self._num_vertices == 0:
             return None
@@ -425,14 +428,15 @@ class Graph:
                 return False
 
             if backtrack(start):
-                return path
+                # Преобразуем в 1-based для вывода
+                return [x + 1 for x in path]
 
         return None
 
     def find_hamiltonian_cycle_tournament(self):
         """
         Поиск гамильтонова цикла в турнире
-        :return: список вершин гамильтонова цикла, если он есть, иначе None
+        :return: список вершин гамильтонова цикла в 1-based, если он есть, иначе None
         """
         if not self.is_tournament():
             return None
@@ -456,7 +460,9 @@ class Graph:
 
         # 2. Пытаемся замкнуть путь в цикл
         if self._adj_matrix[path[-1]][path[0]] == 1:
-            return path + [path[0]]
+            cycle = path + [path[0]]
+            # Преобразуем в 1-based для вывода
+            return [x + 1 for x in cycle]
 
         # Ищем i (1 ≤ i ≤ n-1) такое, что есть ребра path[i] -> path[0] и path[i-1] -> path[-1]
         # В терминах индексов массива: ищем i от 1 до n-1
@@ -464,6 +470,7 @@ class Graph:
             if self._adj_matrix[path[i]][path[0]] == 1 and self._adj_matrix[path[i - 1]][path[-1]] == 1:
                 # Строим цикл: path[0], path[i], path[i+1], ..., path[n-1], path[1], path[2], ..., path[i-1], path[0]
                 cycle = [path[0]] + path[i:] + path[1:i] + [path[0]]
-                return cycle
+                # Преобразуем в 1-based для вывода
+                return [x + 1 for x in cycle]
 
         return None  # турнир не сильно связен, гамильтонова цикла нет

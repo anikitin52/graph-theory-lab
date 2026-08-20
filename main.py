@@ -64,9 +64,7 @@ while True:
         try:
             result = graph.find_eulerian_cycle()
             if result:
-                # Преобразуем в 1-based для вывода
-                result_1based = [x + 1 for x in result]
-                print(f"Эйлеров цикл: {result_1based}")
+                print(f"Эйлеров цикл: {result}")
             else:
                 print("Эйлеров цикл не найден")
         except Exception as e:
@@ -76,9 +74,7 @@ while True:
         try:
             result = graph.find_hamiltonian_cycle()
             if result:
-                # Преобразуем в 1-based для вывода
-                result_1based = [x + 1 for x in result]
-                print(f"Гамильтонов цикл: {result_1based}")
+                print(f"Гамильтонов цикл: {result}")
             else:
                 print("Гамильтонов цикл не найден")
         except Exception as e:
@@ -88,9 +84,7 @@ while True:
         try:
             result = graph.find_hamiltonian_path()
             if result:
-                # Преобразуем в 1-based для вывода
-                result_1based = [x + 1 for x in result]
-                print(f"Гамильтонов путь: {result_1based}")
+                print(f"Гамильтонов путь: {result}")
             else:
                 print("Гамильтонов путь не найден")
         except Exception as e:

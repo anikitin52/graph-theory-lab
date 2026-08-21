@@ -1,15 +1,27 @@
-from graph import Graph
+from graph.graph import Graph
 
-print("=== ЛАБОРАТОРНАЯ РАБОТА 1: ТЕОРИЯ ГРАФОВ === \n")
+print("=== НАУЧНАЯ РАБОТА ПО ТЕОРИИ ГРАФОВ === \n")
 
 vertices = None
 graph = None
 
 while True:
     if vertices is None:
-        print("Граф не задан, введите количество вершин")
-        vertices = int(input())
-        graph = Graph(vertices)
+        while True:
+            try:
+                print("Граф не задан, введите количество вершин")
+                vertices = int(input())
+                if vertices < 0:
+                    print("Ошибка: количество вершин не может быть отрицательным!")
+                    continue
+                graph = Graph(vertices)
+                print(f"Граф с {vertices} вершинами создан!")
+                break
+            except ValueError:
+                print("Ошибка: введите целое число!")
+            except Exception as e:
+                print(f"Ошибка: {e}")
+
         continue
 
     print(''' Главное меню:
@@ -25,22 +37,64 @@ while True:
     choice = input("Выберите действие: ").strip()
 
     if choice == '1':
-        graph.set_adj_matrix()
+        try:
+            graph.set_adj_matrix()
+            print("Матрица смежности успешно введена!")
+        except ValueError as e:
+            print(f"Ошибка ввода матрицы смежности: {e}")
+        except Exception as e:
+            print(f"Неожиданная ошибка: {e}")
+
     elif choice == '2':
-        graph.set_adj_list()
+        try:
+            graph.set_adj_list()
+            print("Списки смежности успешно введены!")
+        except ValueError as e:
+            print(f"Ошибка ввода списков смежности: {e}")
+        except Exception as e:
+            print(f"Неожиданная ошибка: {e}")
+
     elif choice == '3':
-        print(graph)
+        try:
+            print(graph)
+        except Exception as e:
+            print(f"Ошибка при выводе информации о графе: {e}")
+
     elif choice == '4':
-        print(graph.find_eulerian_cycle())
+        try:
+            result = graph.find_eulerian_cycle()
+            if result:
+                print(f"Эйлеров цикл: {result}")
+            else:
+                print("Эйлеров цикл не найден")
+        except Exception as e:
+            print(f"Ошибка при поиске эйлерова цикла: {e}")
+
     elif choice == '5':
-        if graph.is_tournament():
-            print(graph.find_hamiltonian_cycle_tournament())
-        else:
-            print(graph.find_hamiltonian_cycle())
+        try:
+            result = graph.find_hamiltonian_cycle()
+            if result:
+                print(f"Гамильтонов цикл: {result}")
+            else:
+                print("Гамильтонов цикл не найден")
+        except Exception as e:
+            print(f"Ошибка при поиске гамильтонова цикла: {e}")
+
     elif choice == '6':
-        print(graph.find_hamiltonian_path())
+        try:
+            result = graph.find_hamiltonian_path()
+            if result:
+                print(f"Гамильтонов путь: {result}")
+            else:
+                print("Гамильтонов путь не найден")
+        except Exception as e:
+            print(f"Ошибка при поиске гамильтонова пути: {e}")
+
     elif choice == '7':
         print("Выход из программы ...")
         break
+
     else:
-        print("Ошибка ввода!")
+        print("Ошибка ввода! Выберите действие от 1 до 7.")
+
+print("Программа завершена.")

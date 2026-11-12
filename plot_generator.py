@@ -27,6 +27,11 @@ class PlotGenerator:
             "color": "red",
             "marker": "^",
             "label": "Гамильтонов путь"
+        },
+        "longest_cycle": {
+            "color": "purple",
+            "marker": "D",
+            "label": "Наибольший простой цикл"
         }
     }
 
@@ -34,7 +39,12 @@ class PlotGenerator:
     TYPE_LABELS = {
         "with_cycle": "с эйлеровым циклом",
         "without_cycle": "без эйлерова цикла",
-        "complete_graph": "полный граф"
+        "complete_graph": "полный граф",
+        "random_sparse": "случайный граф (разреженный)",
+        "random_dense": "случайный граф (плотный)",
+        "bipartite": "двудольный граф",
+        "split": "расщепляемый граф",
+        "chordal": "триангулированный граф"
     }
 
     def __init__(self):
@@ -207,4 +217,42 @@ class PlotGenerator:
 
         print(f"✅ Сводный график сохранен: {plot_path}")
 
+    def generate_longest_cycle_plot(self):
+        """Сводный график наибольшего простого цикла: все классы графов на одной оси"""
+        json_files = sorted(self.RESULTS_DIR.glob("longest_cycle_*.json"))
 
+        if not json_files:
+            print(f"⚠️ JSON файлы longest_cycle_*.json не найдены в: {self.RESULTS_DIR}")
+            return
+
+        fig, ax = plt.subplots(figsize=(12, 8))
+        markers = ['o', 's', '^', 'D', 'v', 'P']
+
+        for idx, json_file in enumerate(json_files):
+            data = self.load_json(json_file)
+            if not data or not data.get("results"):
+                continue
+
+            results = data["results"]
+            type_label = self.TYPE_LABELS.get(data.get("type", "unknown"), data.get("type"))
+            ax.plot([r["vertices"] for r in results],
+                    [r["time_ms"] for r in results],
+                    marker=markers[idx % len(markers)],
+                    linestyle='-',
+                    linewidth=2,
+                    markersize=7,
+                    label=type_label)
+
+        ax.set_xlabel("Количество вершин", fontsize=12)
+        ax.set_ylabel("Время выполнения (мс)", fontsize=12)
+        ax.set_title("Наибольший простой цикл: время работы по классам графов",
+                     fontsize=14, fontweight='bold')
+        ax.grid(True, alpha=0.3)
+        ax.legend(loc='best', fontsize=10)
+
+        plot_path = self.PLOTS_DIR / "longest_cycle_combined.png"
+        plt.tight_layout()
+        plt.savefig(plot_path, dpi=300, bbox_inches='tight')
+        plt.close()
+
+        print(f"✅ Сводный график наибольшего цикла сохранен: {plot_path}")

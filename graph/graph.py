@@ -189,6 +189,7 @@ class Graph:
 
         return result
 
+    # АЛГОРИТМЫ НА ГРАФАХ
     # ЭЙЛЕРОВ ЦИКЛ
     def _is_eulerian(self):
         """
@@ -429,3 +430,90 @@ class Graph:
                 return [x + 1 for x in cycle]
 
         return None
+
+    # ПОИСК НАИБОЛЬШЕГО ПРОСТОГО ЦИКЛА
+    def find_longest_cycle(self):
+        """
+        Поиск простого цикла наибольшей длины вида
+        «ветвь DFS-дерева + одно обратное ребро».
+        Работает для простого неориентированного графа.
+        :return: список вершин цикла в 1-based (без повторения первой вершины в конце)
+                 или [], если циклов нет
+        """
+        if self._directed:
+            raise ValueError(
+                'Метод find_longest_cycle применим только к неориентированным графам.'
+            )
+
+        n = self._num_vertices
+        adj = self._adj_lists
+        WHITE, GRAY, BLACK = 0, 1, 2
+
+        # ШАГ 1. Построение DFS-леса
+        color = [WHITE] * n
+        parent = [None] * n
+        d = [0] * n
+
+        # Процедура DFS(u) в итеративной форме (тот же порядок обхода,
+        # но без риска переполнения стека рекурсии на больших графах)
+        for root in range(n):
+            if color[root] == WHITE:
+                d[root] = 0
+                color[root] = GRAY
+                stack = [(root, iter(adj[root]))]
+                while stack:
+                    u, neighbours = stack[-1]
+                    for w in neighbours:
+                        if color[w] == WHITE:
+                            parent[w] = u
+                            d[w] = d[u] + 1
+                            color[w] = GRAY
+                            stack.append((w, iter(adj[w])))
+                            break
+                    else:
+                        color[u] = BLACK
+                        stack.pop()
+
+        # ШАГ 2. Выделение обратных рёбер (u -> предок w)
+        back_edges = {u: [] for u in range(n)}  # B, сгруппированный по нижнему концу u
+        for u in range(n):
+            for w in adj[u]:
+                if w != parent[u] and parent[w] != u and d[w] < d[u]:
+                    back_edges[u].append(w)
+
+        # ШАГ 3. Выделение ветвей дерева: листья = вершины, не являющиеся parent ни для кого
+        is_parent = [False] * n
+        for v in range(n):
+            if parent[v] is not None:
+                is_parent[parent[v]] = True
+        leaves = [v for v in range(n) if not is_parent[v]]
+
+        # ШАГ 4. Поиск лучшего цикла
+        best_len = 0
+        best_u = None
+        best_w = None
+        for leaf in leaves:
+            # ветвь P(leaf): путь от корня до листа по parent[]
+            u = leaf
+            while u is not None:
+                for w in back_edges[u]:
+                    length = d[u] - d[w] + 1
+                    if length > best_len:
+                        best_len = length
+                        best_u = u
+                        best_w = w
+                u = parent[u]
+
+        # ШАГ 5. Восстановление цикла
+        if best_len == 0:
+            return []  # граф — лес
+
+        cycle = []
+        x = best_u
+        while x != best_w:
+            cycle.append(x)
+            x = parent[x]
+        cycle.append(best_w)
+
+        return [v + 1 for v in cycle]  # цикл замыкается ребром (best_u, best_w)
+
